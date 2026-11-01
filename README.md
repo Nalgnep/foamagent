@@ -6,6 +6,17 @@
 
 > **状态说明**：本仓库为可运行的系统骨架，数据均为演示模拟数据，PLC、相机、MES/IoT 均为模拟/待对接，优化规则为本地确定性规则而非训练模型，不可直接用于真实产线控制，详见 LIMITATIONS.md。
 
+## S7CommPlus 符号网关（gateway/）
+
+按符号名采集优化块的网关，封装现成 `s7commplus` 库，不重写
+协议栈：点表、批量读、类型转换、断线重连、写白名单/范围/
+步长/审批、审计、写不重试。无 PLC 时可用模拟运行，
+详见 [gateway/README.md](gateway/README.md)。
+
+```bash
+python -m gateway.cli --mock --read-all
+```
+
 ## 快速运行（本地）
 
 ```bash
