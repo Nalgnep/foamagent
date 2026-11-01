@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+*.pyc
+backend/foaming.db
+.pytest_cache/
+.pytest_cache/

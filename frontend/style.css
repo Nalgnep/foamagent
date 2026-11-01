@@ -1,0 +1,16 @@
+*{box-sizing:border-box}body{margin:0;font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;background:#eef1f4;color:#16232e}
+header{background:#0f2a44;color:#fff;padding:16px 20px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px}
+header h1{margin:0;font-size:20px}header p{margin:2px 0;color:#cbd5e1;font-size:13px}
+nav{display:flex;gap:6px;flex-wrap:wrap;background:#fff;padding:10px 14px;border-bottom:1px solid #dbe2e8}
+nav button{border:1px solid #cbd5e1;background:#fff;border-radius:20px;padding:7px 14px;cursor:pointer}
+nav button.active{background:#00aaa6;color:#fff;border-color:#00aaa6}
+main{max-width:1180px;margin:0 auto;padding:18px}
+.card{background:#fff;border:1px solid #dbe2e8;border-radius:12px;padding:16px;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.kpi{border:1px solid #dbe2e8;border-radius:10px;padding:12px;background:#f8fafc}.kpi b{font-size:22px;display:block}
+table{width:100%;border-collapse:collapse;font-size:13.5px}th,td{border:1px solid #dbe2e8;padding:7px 9px;text-align:left}
+th{background:#f0fdfa}input,select{padding:7px 9px;border:1px solid #cbd5e1;border-radius:6px;margin:3px}
+button.primary{background:#00aaa6;color:#fff;border:0;border-radius:8px;padding:8px 14px;cursor:pointer}
+button.danger{background:#dc2626;color:#fff;border:0;border-radius:8px;padding:8px 14px;cursor:pointer}
+pre{background:#f8fafc;border:1px solid #dbe2e8;border-radius:8px;padding:10px;white-space:pre-wrap;font-size:13px}
+.note{font-size:13px;color:#64748b}.warn{background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:10px}
+@media(max-width:800px){.grid{grid-template-columns:repeat(2,1fr)}}
