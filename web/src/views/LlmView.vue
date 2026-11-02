@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="view-stack">
     <el-card header="LLM 兜底工作台（本地知识检索 · 不直接控线）">
       <el-alert title="本工作台只返回证据与诊断报告，不写入 PLC。任何生产调整仍须走参数优化 → 审批 → 下发管控流程。" type="warning" :closable="false" />
       <el-form inline style="margin-top: 12px">
@@ -23,7 +23,7 @@
         <el-form-item><el-button type="primary" @click="sed">专家标注沉淀入库</el-button></el-form-item>
       </el-form>
     </el-card>
-    <el-card header="知识表" style="margin-top: 14px">
+    <el-card header="知识表">
       <el-table :data="list">
         <el-table-column prop="title" label="标题" />
         <el-table-column prop="category" label="分类" />

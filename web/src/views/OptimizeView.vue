@@ -1,7 +1,7 @@
 <template>
-  <div>
+  <div class="view-stack">
     <el-card header="参数优化">
-      <p style="color: #909399">输入工艺参数，后端计算缺陷概率、置信度、可行域；不可行或置信度&lt;0.70 或分布外时自动转 LLM 工作台，不自动下发。优化走模型适配器，机理孪生返回约束校验结果。</p>
+      <p class="card-note">输入工艺参数，后端计算缺陷概率、置信度、可行域；不可行或置信度&lt;0.70 或分布外时自动转 LLM 工作台，不自动下发。优化走模型适配器，机理孪生返回约束校验结果。</p>
       <el-form inline :model="form" label-width="80px">
         <el-form-item label="料比"><el-input-number v-model="form.material_ratio" :step="0.01" /></el-form-item>
         <el-form-item label="料温℃"><el-input-number v-model="form.material_temp" /></el-form-item>
@@ -30,7 +30,7 @@
         </el-descriptions>
       </div>
     </el-card>
-    <el-card header="建议表" style="margin-top: 14px">
+    <el-card header="建议表">
       <el-table :data="list">
         <el-table-column prop="id" label="建议ID" />
         <el-table-column prop="box_barcode" label="箱体" />

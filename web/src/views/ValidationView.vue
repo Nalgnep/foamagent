@@ -1,7 +1,7 @@
 <template>
-  <div>
+  <div class="view-stack">
     <el-card header="模型验证：适配器与独立验证">
-      <p style="color: #909399">优化接口已改为走模型适配器：当前为本地规则；训练模型槽位未接入，选中会被后端拒绝，直到提供模型文件、特征清单并通过独立验证。</p>
+      <p class="card-note">优化接口已改为走模型适配器：当前为本地规则；训练模型槽位未接入，选中会被后端拒绝，直到提供模型文件、特征清单并通过独立验证。</p>
       <p>当前适配器：<el-tag type="info">{{ adapters.active }}</el-tag></p>
       <el-table :data="adapters.adapters">
         <el-table-column prop="name" label="适配器" />
@@ -19,22 +19,29 @@
       </el-table>
     </el-card>
 
-    <el-card header="机理孪生（约束框架，未验证）" style="margin-top: 14px">
-      <p>状态：{{ twin.status }} · 需验证组数：{{ twin.required_groups }} · 趋势一致性要求：≥{{ (twin.trend_consistency_required * 100).toFixed(0) }}% · 归一化误差上限：{{ twin.normalized_error_max }} · 已验证组数：{{ twin.validated_groups }} · 趋势一致性：{{ twin.trend_consistency === null ? '未验证' : twin.trend_consistency }}</p>
-      <p style="color: #909399">{{ twin.note }}</p>
+    <el-card header="机理孪生（约束框架，未验证）">
+      <div class="info-grid">
+        <div class="info-item"><div class="k">状态</div><div class="v">{{ twin.status }}</div></div>
+        <div class="info-item"><div class="k">需验证组数</div><div class="v">{{ twin.required_groups }}</div></div>
+        <div class="info-item"><div class="k">趋势一致性要求</div><div class="v">≥{{ (twin.trend_consistency_required * 100).toFixed(0) }}%</div></div>
+        <div class="info-item"><div class="k">归一化误差上限</div><div class="v">{{ twin.normalized_error_max }}</div></div>
+        <div class="info-item"><div class="k">已验证组数</div><div class="v">{{ twin.validated_groups }}</div></div>
+        <div class="info-item"><div class="k">趋势一致性</div><div class="v">{{ twin.trend_consistency === null ? '未验证' : twin.trend_consistency }}</div></div>
+      </div>
+      <p class="card-note">{{ twin.note }}</p>
     </el-card>
 
-    <el-card header="跑一次独立验证" style="margin-top: 14px">
-      <p style="color: #909399">粘贴冻结验证集 JSON（每条含 5 个工艺参数 + is_ng，is_high_risk / is_severe 可选）。预测 NG 的口径固定为：缺陷概率 ≥0.50 或超出可行域。结论只对这批样本负责。</p>
+    <el-card header="跑一次独立验证">
+      <p class="card-note">粘贴冻结验证集 JSON（每条含 5 个工艺参数 + is_ng，is_high_risk / is_severe 可选）。预测 NG 的口径固定为：缺陷概率 ≥0.50 或超出可行域。结论只对这批样本负责。</p>
       <el-form>
         <el-form-item><el-input v-model="datasetName" placeholder="数据集名称，如 2026-11-冻结验证集A" style="width: 320px" /></el-form-item>
         <el-form-item><el-input v-model="datasetJson" type="textarea" :rows="8" /></el-form-item>
         <el-form-item><el-button type="primary" @click="runVal">运行验证并留存</el-button></el-form-item>
       </el-form>
-      <pre v-if="valOut" style="white-space: pre-wrap">{{ valOut }}</pre>
+      <pre v-if="valOut" class="result-pre">{{ valOut }}</pre>
     </el-card>
 
-    <el-card header="验证记录" style="margin-top: 14px">
+    <el-card header="验证记录">
       <el-table :data="runs">
         <el-table-column prop="id" label="ID" />
         <el-table-column prop="adapter" label="适配器" />

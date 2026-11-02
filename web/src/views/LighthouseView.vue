@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="view-stack">
     <el-card header="灯塔运营">
       <p>权重：质量 {{ data.weights?.quality }} · 原料 {{ data.weights?.material }} · 能耗 {{ data.weights?.energy }}</p>
       <el-form inline>
@@ -19,7 +19,7 @@
         <el-form-item><el-button type="primary" @click="addCo">记录换产爬坡</el-button></el-form-item>
       </el-form>
     </el-card>
-    <el-card header="9 包多线复制包" style="margin-top: 14px">
+    <el-card header="9 包多线复制包">
       <el-table :data="data.replication">
         <el-table-column prop="name" label="包" />
         <el-table-column prop="status" label="状态">

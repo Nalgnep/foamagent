@@ -1,10 +1,10 @@
 <template>
-  <div>
+  <div class="view-stack">
     <div class="page-head">
       <div><h2>仪表盘</h2><p>成都 B 线箱体发泡 · 在线感知 — 质量判定 — 工艺分析 — 建议 / 下发 — 效果验证 — 知识沉淀</p></div>
       <el-tag type="success" size="large">热成像一体机在线</el-tag>
     </div>
-    <el-row :gutter="14" style="margin-bottom: 16px">
+    <el-row :gutter="20" style="margin-bottom: 20px">
       <el-col :span="4" v-for="k in kpis" :key="k.label">
         <el-card shadow="hover" class="kpi-card">
           <div class="kpi-top"><span :class="'kpi-tile ' + k.tile">{{ k.icon }}</span></div>
@@ -15,10 +15,10 @@
       </el-col>
     </el-row>
 
-    <el-row :gutter="14" style="margin-bottom: 14px">
-      <el-col :span="9">
-        <el-card header="智能体 · 根因分析">
-          <template #header><span>智能体 · 根因分析</span><span style="float: right; color: #909399; font-size: 12px">候选根因来自知识库，非最终判定</span></template>
+    <el-row :gutter="20" style="margin-bottom: 20px">
+      <el-col :span="14">
+        <el-card>
+          <template #header><div class="panel-head"><span>智能体 · 根因分析</span><span class="sub">候选根因来自知识库，非最终判定</span></div></template>
           <el-table :data="ngCases" empty-text="暂无 NG 案例">
             <el-table-column label="触发">
               <template #default="{ row }"><el-tag :type="row.grade === 'D' ? 'danger' : 'warning'">{{ row.grade === 'D' ? '高风险' : '人工发起' }}</el-tag></template>
@@ -33,15 +33,15 @@
           </el-table>
         </el-card>
       </el-col>
-      <el-col :span="7">
-        <el-card header="智能体 · 参数建议">
-          <template #header><span>智能体 · 参数建议</span><el-button link style="float: right" @click="$emit('navigate', 'optimize', '参数建议报告')">根据快查</el-button></template>
+      <el-col :span="10">
+        <el-card>
+          <template #header><div class="panel-head"><span>智能体 · 参数建议</span><el-button link @click="$emit('navigate', 'optimize', '参数建议报告')">根据快查</el-button></div></template>
           <div v-if="!sugs.length"><el-empty description="暂无参数建议" /></div>
-          <el-card v-for="s in sugs.slice(0, 3)" :key="s.id" shadow="never" class="suggest-card">
-            <div>建议 #{{ s.id }} · {{ s.box_barcode || '未关联箱体' }}
+          <div v-for="s in sugs.slice(0, 3)" :key="s.id" class="suggest-item">
+            <div class="t"><span>建议 #{{ s.id }} · {{ s.box_barcode || '未关联箱体' }}</span>
               <el-tag :type="s.confidence >= 0.7 ? 'success' : 'warning'">置信度 {{ Math.round(s.confidence * 100) }}%</el-tag>
             </div>
-            <div style="color: #909399; font-size: 13px">
+            <div class="p">
               料比 {{ s.suggested.material_ratio }} · 料温 {{ s.suggested.material_temp }}℃ ·
               模芯 {{ s.suggested.core_temp }}℃ · 固化 {{ s.suggested.curing_time }}s · 目标分 {{ s.objective_score }}
             </div>
@@ -50,44 +50,45 @@
               <el-tag v-if="s.routed_to_llm" type="info">已转 LLM</el-tag>
               <span> · 状态 {{ s.status }}</span>
             </div>
-          </el-card>
-        </el-card>
-      </el-col>
-      <el-col :span="8">
-        <el-card header="质量率趋势">
-          <template #header><span>质量率趋势</span><span style="float: right; color: #909399; font-size: 12px">按检测序列累计</span></template>
-          <p class="legend"><span><i style="background:#16a34a"></i>OK率</span><span><i style="background:#f59e0b"></i>RISK率</span><span><i style="background:#dc2626"></i>NG率</span></p>
-          <TrendChart :thermals="thermals" />
-          <p style="color: #909399; font-size: 13px">样本 {{ thermals.length }} 台 · 当前一次合格率 {{ (dashboard.kpis.first_pass_rate * 100).toFixed(1) }}%（演示数据）</p>
+          </div>
         </el-card>
       </el-col>
     </el-row>
 
-    <el-row :gutter="14">
-      <el-col :span="15">
-        <el-card header="当前箱体">
-          <template #header><span>当前箱体</span><span style="float: right; color: #909399; font-size: 12px">最新一条记录</span></template>
-          <el-descriptions :column="1" border>
-            <el-descriptions-item label="时间">{{ latestBox.created_at || '-' }}</el-descriptions-item>
-            <el-descriptions-item label="箱体">{{ latestBox.barcode || '-' }} · 夹具 {{ latestBox.fixture_no || '-' }} · {{ latestBox.product || '-' }}</el-descriptions-item>
-            <el-descriptions-item label="热成像">
-              {{ latestThermal.grade || '-' }} · {{ latestThermal.max_bubble_mm ?? '-' }}mm · {{ latestThermal.bubble_count ?? '-' }}个
-              <el-tag :type="latestThermal.is_ng ? 'warning' : 'success'">{{ latestThermal.is_ng ? 'RISK' : 'OK' }}</el-tag>
-            </el-descriptions-item>
-            <el-descriptions-item label="最新建议">
-              <template v-if="latestSug.id">#{{ latestSug.id }} · 置信度 {{ Math.round(latestSug.confidence * 100) }}% · 缺陷概率 {{ latestSug.defect_probability }}</template>
-              <template v-else>暂无</template>
-            </el-descriptions-item>
-            <el-descriptions-item label="产线">模式 {{ systemState.mode }} · {{ systemState.stopped ? '已停止' : '正常' }}</el-descriptions-item>
-          </el-descriptions>
+    <el-row :gutter="20" style="margin-bottom: 20px">
+      <el-col :span="14">
+        <el-card>
+          <template #header><div class="panel-head"><span>质量率趋势</span><span class="sub">按检测序列累计</span></div></template>
+          <p class="legend"><span><i style="background:#16a34a"></i>OK率</span><span><i style="background:#f59e0b"></i>RISK率</span><span><i style="background:#dc2626"></i>NG率</span></p>
+          <TrendChart :thermals="thermals" />
+          <p class="card-note" style="margin: 12px 0 0">样本 {{ thermals.length }} 台 · 当前一次合格率 {{ (dashboard.kpis.first_pass_rate * 100).toFixed(1) }}%（演示数据）</p>
         </el-card>
       </el-col>
-      <el-col :span="9">
-        <el-card header="本班判定分布">
-          <template #header><span>本班判定分布</span><span style="float: right; color: #909399; font-size: 12px">共 {{ thermals.length }} 台</span></template>
-          <DonutChart :ok="okCount" :risk="riskCount" :ng="ngCount" />
-          <p>OK <b>{{ okCount }}</b> · {{ pct(okCount) }} ｜ RISK <b>{{ riskCount }}</b> · {{ pct(riskCount) }} ｜ NG <b>{{ ngCount }}</b> · {{ pct(ngCount) }}</p>
-          <p style="color: #909399; font-size: 13px">OK 为 A/B 且非 NG；RISK 为 C 且非 NG；NG 为热成像 NG 判定。</p>
+    </el-row>
+
+    <el-row :gutter="20">
+      <el-col :span="24">
+        <el-card>
+          <template #header><div class="panel-head"><span>当前箱体</span><span class="sub">最新一条记录</span></div></template>
+          <div class="info-grid">
+            <div class="info-item"><div class="k">时间</div><div class="v">{{ latestBox.created_at || '-' }}</div></div>
+            <div class="info-item"><div class="k">箱体 / 夹具 / 产品</div><div class="v">{{ latestBox.barcode || '-' }} · {{ latestBox.fixture_no || '-' }} · {{ latestBox.product || '-' }}</div></div>
+            <div class="info-item"><div class="k">热成像</div><div class="v">{{ latestThermal.grade || '-' }} · {{ latestThermal.max_bubble_mm ?? '-' }}mm · {{ latestThermal.bubble_count ?? '-' }}个 <el-tag :type="latestThermal.is_ng ? 'warning' : 'success'">{{ latestThermal.is_ng ? 'RISK' : 'OK' }}</el-tag></div></div>
+            <div class="info-item"><div class="k">最新建议</div><div class="v"><template v-if="latestSug.id">#{{ latestSug.id }} · 置信度 {{ Math.round(latestSug.confidence * 100) }}% · 缺陷概率 {{ latestSug.defect_probability }}</template><template v-else>暂无</template></div></div>
+            <div class="info-item"><div class="k">产线</div><div class="v">模式 {{ systemState.mode }} · {{ systemState.stopped ? '已停止' : '正常' }}</div></div>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :span="10">
+        <el-card>
+          <template #header><div class="panel-head"><span>本班判定分布</span><span class="sub">共 {{ thermals.length }} 台</span></div></template>
+          <div style="display:flex; justify-content:center"><DonutChart :ok="okCount" :risk="riskCount" :ng="ngCount" /></div>
+          <div class="dist-legend">
+            <span>OK <b>{{ okCount }}</b> <span class="n">{{ pct(okCount) }}</span></span>
+            <span>RISK <b>{{ riskCount }}</b> <span class="n">{{ pct(riskCount) }}</span></span>
+            <span>NG <b>{{ ngCount }}</b> <span class="n">{{ pct(ngCount) }}</span></span>
+          </div>
+          <p class="card-note" style="text-align:center; margin: 10px 0 0">OK 为 A/B 且非 NG；RISK 为 C 且非 NG；NG 为热成像 NG 判定。</p>
         </el-card>
       </el-col>
     </el-row>

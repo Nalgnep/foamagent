@@ -1,7 +1,7 @@
 <template>
-  <div>
+  <div class="view-stack">
     <el-card header="箱体条码追溯（多条件关联 · 异常不硬绑）">
-      <p style="color: #909399">重复条码、缺失、夹具冲突、乱序都会进入异常队列，状态为“待确认/关联异常”，须管理员人工修正；系统不会凭时间相近硬绑。</p>
+      <p class="card-note">重复条码、缺失、夹具冲突、乱序都会进入异常队列，状态为“待确认/关联异常”，须管理员人工修正；系统不会凭时间相近硬绑。</p>
       <el-form inline :model="form">
         <el-form-item label="箱体条码"><el-input v-model="form.barcode" placeholder="箱体条码" /></el-form-item>
         <el-form-item label="夹具号"><el-input v-model="form.fixture_no" placeholder="夹具号" /></el-form-item>
@@ -10,7 +10,7 @@
       </el-form>
       <el-alert v-if="result" :title="result.bound ? `已绑定：${result.barcode}` : `未硬绑：${result.detail}（已进入异常队列）`" :type="result.bound ? 'success' : 'warning'" :closable="false" />
     </el-card>
-    <el-card header="异常队列" style="margin-top: 14px">
+    <el-card header="异常队列">
       <el-table :data="list">
         <el-table-column prop="barcode" label="条码" />
         <el-table-column prop="fixture_no" label="夹具" />

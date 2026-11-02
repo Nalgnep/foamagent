@@ -92,3 +92,26 @@ html, body, #app { margin: 0; min-height: 100%; background: var(--bg); color: va
 .suggest-card:last-child { margin-bottom: 0; }
 .legend { font-size: 13px; color: var(--muted); display: flex; gap: 14px; flex-wrap: wrap; }
 .legend i { display: inline-block; width: 18px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 4px; }
+
+/* ---- right-side page layout rhythm ---- */
+.view-stack { display: flex; flex-direction: column; gap: 18px; max-width: 1440px; }
+.view-head { margin-bottom: 2px; }
+.view-head h2 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: 0.2px; }
+.view-head p { margin: 6px 0 0; color: var(--muted); font-size: 13.5px; line-height: 1.7; max-width: 960px; }
+.card-note { color: var(--muted); font-size: 13.5px; line-height: 1.7; margin: 0 0 14px; }
+.el-form--inline .el-form-item { margin-bottom: 14px; margin-right: 18px; }
+.el-form-item__label { font-weight: 500; }
+.el-alert { border-radius: 12px; }
+.el-alert + .el-alert { margin-top: 12px; }
+.view-stack .el-alert { margin-top: 14px; }
+.view-stack .el-steps { margin: 18px 0 6px; }
+.result-pre { background: #f7f9fb; border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; font-size: 12.5px; line-height: 1.6; overflow: auto; margin-top: 14px; white-space: pre-wrap; }
+.info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px 24px; }
+.info-item .k { color: var(--muted); font-size: 12.5px; margin-bottom: 3px; }
+.info-item .v { font-size: 14.5px; font-weight: 600; line-height: 1.6; }
+.suggest-item { border: 1px solid #eef2f5; border-radius: 12px; padding: 13px 15px; margin-bottom: 12px; background: #fbfcfd; }
+.suggest-item:last-child { margin-bottom: 0; }
+.suggest-item .t { font-weight: 600; font-size: 14px; display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+.suggest-item .p { color: var(--muted); font-size: 13px; margin: 6px 0 8px; line-height: 1.6; }
+.dist-legend { display: flex; justify-content: center; gap: 22px; margin-top: 10px; font-size: 14px; flex-wrap: wrap; }
+.dist-legend .n { color: var(--muted); font-size: 12.5px; }

@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="view-stack">
     <el-card header="模型全生命周期">
       <p>漂移代理指标：近期NG率 {{ drift.recent_ng_rate }}，漂移分数 {{ drift.drift_score }}，预警：{{ drift.warning ? '是' : '否' }}（{{ drift.note }}）</p>
       <el-table :data="list">

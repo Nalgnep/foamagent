@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="view-stack">
     <el-card header="下发管控（分级启用 · 8项校验 · 回退）">
       <p>当前模式：<b>{{ state.mode }}</b> · 系统停止：{{ state.stopped ? '是' : '否' }} · 安全基线：{{ JSON.stringify(state.safe_baseline) }}</p>
       <el-form inline>
@@ -30,7 +30,7 @@
         </el-table>
       </div>
     </el-card>
-    <el-card header="下发表" style="margin-top: 14px">
+    <el-card header="下发表">
       <el-table :data="list">
         <el-table-column prop="id" label="下发ID" />
         <el-table-column prop="suggestion_id" label="建议ID" />
