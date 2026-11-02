@@ -1,10 +1,11 @@
 <template>
   <svg viewBox="0 0 140 140" width="150" height="150">
+    <circle cx="70" cy="70" r="54" fill="none" stroke="#eef2f5" stroke-width="18" />
     <circle
       v-for="seg in segments"
       :key="seg.label"
       cx="70" cy="70" r="54" fill="none"
-      :stroke="seg.color" stroke-width="18"
+      :stroke="seg.color" stroke-width="18" stroke-linecap="round"
       :stroke-dasharray="`${seg.len.toFixed(1)} ${(C - seg.len).toFixed(1)}`"
       :stroke-dashoffset="(-seg.offset).toFixed(1)"
       transform="rotate(-90 70 70)"

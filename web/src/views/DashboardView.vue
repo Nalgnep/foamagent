@@ -1,12 +1,16 @@
 <template>
   <div>
-    <el-row :gutter="12" style="margin-bottom: 14px">
+    <div class="page-head">
+      <div><h2>仪表盘</h2><p>成都 B 线箱体发泡 · 在线感知 — 质量判定 — 工艺分析 — 建议 / 下发 — 效果验证 — 知识沉淀</p></div>
+      <el-tag type="success" size="large">热成像一体机在线</el-tag>
+    </div>
+    <el-row :gutter="14" style="margin-bottom: 16px">
       <el-col :span="4" v-for="k in kpis" :key="k.label">
-        <el-card shadow="hover">
-          <div style="font-size: 20px">{{ k.icon }}</div>
-          <div style="color: #909399; font-size: 13px">{{ k.label }}</div>
-          <div style="font-size: 26px; font-weight: 700">{{ k.value }}</div>
-          <div style="color: #909399; font-size: 12px">{{ k.sub }}</div>
+        <el-card shadow="hover" class="kpi-card">
+          <div class="kpi-top"><span :class="'kpi-tile ' + k.tile">{{ k.icon }}</span></div>
+          <div class="kpi-label">{{ k.label }}</div>
+          <div class="kpi-value">{{ k.value }}</div>
+          <div class="kpi-sub">{{ k.sub }}</div>
         </el-card>
       </el-col>
     </el-row>
@@ -33,7 +37,7 @@
         <el-card header="智能体 · 参数建议">
           <template #header><span>智能体 · 参数建议</span><el-button link style="float: right" @click="$emit('navigate', 'optimize', '参数建议报告')">根据快查</el-button></template>
           <div v-if="!sugs.length"><el-empty description="暂无参数建议" /></div>
-          <el-card v-for="s in sugs.slice(0, 3)" :key="s.id" shadow="never" style="margin-bottom: 10px">
+          <el-card v-for="s in sugs.slice(0, 3)" :key="s.id" shadow="never" class="suggest-card">
             <div>建议 #{{ s.id }} · {{ s.box_barcode || '未关联箱体' }}
               <el-tag :type="s.confidence >= 0.7 ? 'success' : 'warning'">置信度 {{ Math.round(s.confidence * 100) }}%</el-tag>
             </div>
@@ -52,7 +56,7 @@
       <el-col :span="8">
         <el-card header="质量率趋势">
           <template #header><span>质量率趋势</span><span style="float: right; color: #909399; font-size: 12px">按检测序列累计</span></template>
-          <p style="font-size: 13px"><span style="color: #16a34a">━ OK率</span> <span style="color: #f59e0b">━ RISK率</span> <span style="color: #dc2626">━ NG率</span></p>
+          <p class="legend"><span><i style="background:#16a34a"></i>OK率</span><span><i style="background:#f59e0b"></i>RISK率</span><span><i style="background:#dc2626"></i>NG率</span></p>
           <TrendChart :thermals="thermals" />
           <p style="color: #909399; font-size: 13px">样本 {{ thermals.length }} 台 · 当前一次合格率 {{ (dashboard.kpis.first_pass_rate * 100).toFixed(1) }}%（演示数据）</p>
         </el-card>
@@ -115,12 +119,12 @@ const todayCount = computed(() => {
   return thermals.value.filter((t) => (t.created_at || '').slice(0, 10) === today).length
 })
 const kpis = computed(() => [
-  { icon: '☑', label: '我的待办', value: openExc.value.length + unreviewedNG.value.length, sub: '异常待确认 + 未复核 NG' },
-  { icon: '🔥', label: '紧急待办', value: unreviewedNG.value.length, sub: '未复核 NG 箱体' },
-  { icon: '⚠', label: '待处理异常', value: openExc.value.length, sub: '追溯异常队列' },
-  { icon: '✓', label: '当班已处理', value: resolvedExc.value.length + reviewed.value.length, sub: '已修正异常 + 已复核' },
-  { icon: '📷', label: '今日检测', value: todayCount.value, sub: '按检测日期统计（演示库）' },
-  { icon: '🗄', label: '累计检测', value: thermals.value.length, sub: '演示库检测总数' }
+  { icon: '☑', tile: 'teal', label: '我的待办', value: openExc.value.length + unreviewedNG.value.length, sub: '异常待确认 + 未复核 NG' },
+  { icon: '🔥', tile: 'red', label: '紧急待办', value: unreviewedNG.value.length, sub: '未复核 NG 箱体' },
+  { icon: '⚠', tile: 'amber', label: '待处理异常', value: openExc.value.length, sub: '追溯异常队列' },
+  { icon: '✓', tile: 'green', label: '当班已处理', value: resolvedExc.value.length + reviewed.value.length, sub: '已修正异常 + 已复核' },
+  { icon: '📷', tile: 'blue', label: '今日检测', value: todayCount.value, sub: '按检测日期统计（演示库）' },
+  { icon: '🗄', tile: 'purple', label: '累计检测', value: thermals.value.length, sub: '演示库检测总数' }
 ])
 const ngCases = computed(() => thermals.value.filter((t) => t.is_ng).slice(0, 5))
 const okCount = computed(() => thermals.value.filter((t) => (t.grade === 'A' || t.grade === 'B') && !t.is_ng).length)

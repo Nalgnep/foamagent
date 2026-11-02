@@ -19,6 +19,10 @@ npm run preview # 预览时 /api 代理到 http://127.0.0.1:8000（需后端在 
 - Dockerfile / docker-compose 的前端构建步骤
 - GitHub 推送与 instabox 部署
 
+## 设计系统
+
+全局视觉在 `src/assets/design.css` 中统一：深蓝墨色 + Hisense 青色主色、雾面底色、16px 圆角卡片、柔和阴影；各视图不再各自写灰色和内联样式。仪表盘 KPI 用渐变色块 + 大号数字，趋势图带网格线，判定分布环形图带底轨。
+
 ## 数据说明
 
 所有数字均来自后端 API；无独立验证集的指标在界面上显示为“未验证”，

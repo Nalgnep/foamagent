@@ -1,10 +1,13 @@
 <template>
   <svg v-if="seq.length" viewBox="0 0 300 120" width="100%" height="150">
+    <line x1="10" y1="35" x2="290" y2="35" stroke="#eef2f5" />
+    <line x1="10" y1="60" x2="290" y2="60" stroke="#eef2f5" />
+    <line x1="10" y1="85" x2="290" y2="85" stroke="#eef2f5" />
     <line x1="10" y1="10" x2="10" y2="110" stroke="#e2e8f0" />
     <line x1="10" y1="110" x2="290" y2="110" stroke="#e2e8f0" />
-    <polyline :points="ptsOK" fill="none" stroke="#16a34a" stroke-width="2" />
-    <polyline :points="ptsRisk" fill="none" stroke="#f59e0b" stroke-width="2" />
-    <polyline :points="ptsNG" fill="none" stroke="#dc2626" stroke-width="2" />
+    <polyline :points="ptsOK" fill="none" stroke="#16a34a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+    <polyline :points="ptsRisk" fill="none" stroke="#f59e0b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+    <polyline :points="ptsNG" fill="none" stroke="#dc2626" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
   </svg>
   <el-empty v-else description="暂无检测序列" />
 </template>

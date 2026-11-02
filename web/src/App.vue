@@ -2,6 +2,7 @@
   <el-container style="height: 100vh">
     <el-header class="topbar">
       <div class="brand">
+        <span class="logo-mark">H</span>
         <span class="logo">Hisense</span>
         <span class="sys">发泡工艺智能系统</span>
         <span class="page">{{ currentLabel }}</span>
@@ -57,6 +58,11 @@
             <el-menu-item index="audit">全程留痕</el-menu-item>
           </el-sub-menu>
         </el-menu>
+        <div class="sidebar-footer">
+          <div><b style="color: var(--ink)">成都 B 线 · 箱体发泡</b></div>
+          <div>演示数据（模拟）· PLC 模拟回执</div>
+          <div>不可直接用于真实产线控制</div>
+        </div>
       </el-aside>
       <el-main>
         <component :is="views[current]" :key="current + '-' + reloadKey" @navigate="go" />
@@ -130,13 +136,5 @@ onMounted(async () => {
 </script>
 
 <style>
-html, body, #app { margin: 0; height: 100%; }
-.topbar { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #dcdfe6; background: #fff; }
-.brand { display: flex; align-items: baseline; gap: 10px; }
-.logo { color: #00aaa6; font-size: 26px; font-weight: 800; font-style: italic; }
-.sys { font-size: 17px; font-weight: 700; }
-.page { font-size: 14px; color: #909399; border-left: 1px solid #dcdfe6; padding-left: 10px; }
-.top-links { display: flex; align-items: center; gap: 12px; }
-.who { color: #909399; }
-.sidebar { border-right: 1px solid #dcdfe6; background: #fff; overflow: auto; }
+.el-main { background: var(--bg); }
 </style>
