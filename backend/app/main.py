@@ -522,6 +522,146 @@ def list_users(db: Session = Depends(get_db)):
             for u in db.query(User).all()]
 
 
+# ---------------------------------------------------------------- closed-loop tracking (batch 1)
+# Batch 1 adds visibility only: it aggregates rows that already exist
+# (boxes, process records, thermal results, suggestions, issuances) into
+# a per-box timeline, a protocol-vs-lighthouse KPI table, and an
+# issuance-effect comparison. It does NOT invent validation results:
+# metrics without an independent validation set are returned as null
+# with status 未验证, and model-registry values are labelled as such.
+GRADE_RANK = {"A": 0, "B": 1, "C": 2, "D": 3}
+
+
+def _ts(dt):
+    return str(dt) if dt else ""
+
+
+def _issuance_effect(db, row):
+    sug = db.query(Suggestion).get(row.suggestion_id) if row.suggestion_id else None
+    barcode = sug.box_barcode if sug else ""
+    if not barcode:
+        return {"issuance_id": row.id, "suggestion_id": row.suggestion_id, "box_barcode": "",
+                "status": row.status, "mode": row.mode, "pre_grade": None, "post_grade": None,
+                "result": "待关联箱体", "verified": False}
+    thermals = db.query(ThermalResult).filter(ThermalResult.box_barcode == barcode).order_by(ThermalResult.id).all()
+    pre = [t for t in thermals if t.created_at and row.created_at and t.created_at <= row.created_at]
+    post = [t for t in thermals if t.created_at and row.created_at and t.created_at > row.created_at]
+    pre_grade = pre[-1].grade if pre else None
+    post_grade = post[-1].grade if post else None
+    if post_grade is None:
+        result = "待验证：下发后暂无热成像结果"
+    elif pre_grade is None:
+        result = "已有下发后检测，缺下发前对照"
+    elif GRADE_RANK.get(post_grade, 9) < GRADE_RANK.get(pre_grade, 9):
+        result = "改善：等级好转"
+    elif GRADE_RANK.get(post_grade, 9) > GRADE_RANK.get(pre_grade, 9):
+        result = "恶化：等级变差，需复核回退"
+    else:
+        result = "持平：等级未变"
+    return {"issuance_id": row.id, "suggestion_id": row.suggestion_id, "box_barcode": barcode,
+            "status": row.status, "mode": row.mode, "pre_grade": pre_grade, "post_grade": post_grade,
+            "result": result, "verified": bool(pre_grade and post_grade)}
+
+
+@app.get("/api/boxes/{barcode}/timeline")
+def box_timeline(barcode: str, db: Session = Depends(get_db)):
+    box = db.query(Box).filter(Box.barcode == barcode).first()
+    if not box:
+        raise HTTPException(404, "未找到该箱体")
+    events = []
+    events.append({"stage": "在线感知", "title": "箱体上线", "detail": f"夹具 {box.fixture_no} · 产品 {box.product} · 状态 {box.status}", "created_at": _ts(box.created_at)})
+    for r in db.query(ProcessRecord).filter(ProcessRecord.box_barcode == barcode).order_by(ProcessRecord.id):
+        events.append({"stage": "在线感知", "title": "工艺参数记录", "detail": f"料比 {r.material_ratio} · 料温 {r.material_temp}℃ · 模芯 {r.core_temp}℃ · 固化 {r.curing_time}s · 夹具 {r.fixture_temp}℃", "created_at": _ts(r.created_at)})
+    thermals = db.query(ThermalResult).filter(ThermalResult.box_barcode == barcode).order_by(ThermalResult.id).all()
+    for t in thermals:
+        detail = f"等级 {t.grade} · 最大气泡 {t.max_bubble_mm}mm · 数量 {t.bubble_count} · NG={'是' if t.is_ng else '否'}"
+        if t.reviewed_by:
+            detail += f" · 已复核（{t.reviewed_by}：{t.review_note}）"
+        events.append({"stage": "质量判定", "title": "热成像检测", "detail": detail, "created_at": _ts(t.created_at)})
+    for e in db.query(TraceException).filter(TraceException.barcode == barcode).order_by(TraceException.id):
+        events.append({"stage": "追溯", "title": "关联异常", "detail": f"{e.kind} · {e.detail} · 状态 {e.status}", "created_at": _ts(e.created_at)})
+    sugs = db.query(Suggestion).filter(Suggestion.box_barcode == barcode).order_by(Suggestion.id).all()
+    sug_ids = [s.id for s in sugs]
+    for s in sugs:
+        events.append({"stage": "工艺分析", "title": "参数建议", "detail": f"缺陷概率 {s.defect_probability} · 置信度 {s.confidence} · 可行域={'是' if s.feasible else '否'} · 转LLM={'是' if s.routed_to_llm else '否'} · 状态 {s.status}", "created_at": _ts(s.created_at)})
+    issuances = db.query(Issuance).filter(Issuance.suggestion_id.in_(sug_ids)).order_by(Issuance.id).all() if sug_ids else []
+    for row in issuances:
+        try:
+            checks = json.loads(row.checks_json or "{}")
+            passed = f"{sum(1 for c in checks if c.get('passed'))}/{len(checks)} 项通过" if isinstance(checks, list) else ""
+        except Exception:
+            passed = ""
+        events.append({"stage": "参数建议/受控下发", "title": "下发" if row.status == "issued" else f"下发{row.status}",
+                       "detail": f"模式 {row.mode} · {passed} · {row.plc_receipt}", "created_at": _ts(row.created_at)})
+        eff = _issuance_effect(db, row)
+        if eff["post_grade"]:
+            events.append({"stage": "效果验证", "title": "下发后效果验证", "detail": f"下发前 {eff['pre_grade']} → 下发后 {eff['post_grade']} · {eff['result']}", "created_at": _ts(row.created_at)})
+    stage_order = {"在线感知": 0, "质量判定": 1, "工艺分析": 2, "参数建议/受控下发": 3, "效果验证": 4, "知识沉淀": 5, "追溯": 6}
+    events.sort(key=lambda e: (e["created_at"], stage_order.get(e["stage"], 9)))
+    has = {e["stage"] for e in events}
+    stages = []
+    for name in ["在线感知", "质量判定", "工艺分析", "参数建议/受控下发", "效果验证", "知识沉淀"]:
+        done = name in has
+        note = ""
+        if name == "知识沉淀":
+            note = "知识库为全局条目，未按箱体关联；需专家将本箱案例标注入库才算沉淀"
+            done = False
+        stages.append({"stage": name, "done": done, "note": note})
+    pending = [s["stage"] for s in stages if not s["done"]]
+    return {"box": {"barcode": box.barcode, "fixture_no": box.fixture_no, "product": box.product, "status": box.status},
+            "stages": stages, "next_step": pending[0] if pending else "闭环已完成",
+            "events": events}
+
+
+@app.get("/api/kpi/dual-track")
+def dual_track(db: Session = Depends(get_db)):
+    total = db.query(ThermalResult).count()
+    ng = db.query(ThermalResult).filter(ThermalResult.is_ng == 1).count()
+    boxes = db.query(Box).count()
+    production = db.query(ModelVersion).filter(ModelVersion.status == "production").first()
+    recall = production.recall if production else None
+    false_alarm = production.false_alarm if production else None
+    first_pass = round(1 - ng / total, 4) if total else None
+    demo_association = round(total / boxes, 4) if boxes else None
+    rows = [
+        {"metric": "严重缺陷漏检", "protocol": "0", "lighthouse": "0（与协议一致）", "current": None, "status": "未验证",
+         "note": "需冻结独立验证集；当前无独立验证结果，不得以演示 NG 率代替"},
+        {"metric": "高风险召回率", "protocol": "≥85%", "lighthouse": "≥92%（供应商拔高目标）", "current": recall, "status": "达标（协议）" if recall is not None and recall >= 0.85 else ("未达协议" if recall is not None else "未验证"),
+         "note": "当前值为模型登记召回，非独立验证集结果"},
+        {"metric": "误报率", "protocol": "≤10%", "lighthouse": "≤5%（供应商拔高目标）", "current": false_alarm, "status": "达标（协议）" if false_alarm is not None and false_alarm <= 0.10 else ("未达协议" if false_alarm is not None else "未验证"),
+         "note": "当前值为模型登记误报，非独立验证集结果"},
+        {"metric": "热成像关联率", "protocol": "≥99%", "lighthouse": "—（未单列拔高）", "current": demo_association, "status": "演示口径",
+         "note": "演示口径：已检测箱体数/上线箱体数，按条码输入关联，非 ≥100 台连续箱体验收"},
+        {"metric": "追溯关联率", "protocol": "≥99%", "lighthouse": "≥99.5%（供应商拔高目标）", "current": None, "status": "未验证",
+         "note": "需 ≥300 台连续箱体；当前样本不足且含种子数据"},
+        {"metric": "RAG Top3 命中率", "protocol": "≥95%", "lighthouse": "≥98%（供应商拔高目标）", "current": None, "status": "未验证",
+         "note": "当前为本地关键词检索，无约定题库测试结果"},
+        {"metric": "一次合格率", "protocol": "协议未单列", "lighthouse": "—", "current": first_pass, "status": "演示口径",
+         "note": "演示数据，非真实产线合格率"},
+    ]
+    return {"rows": rows, "production_model": f"{production.name} {production.version}" if production else None,
+            "note": "协议基线为技术协议验收口径；灯塔列为供应商拔高目标，不作为验收否决项；current 为 null 即未验证，不得读作达标"}
+
+
+@app.get("/api/issuances/effects")
+def issuance_effects(db: Session = Depends(get_db)):
+    rows = db.query(Issuance).order_by(Issuance.id.desc()).limit(200).all()
+    return [_issuance_effect(db, r) for r in rows]
+
+
+@app.post("/api/issuances/{iid}/verify")
+def verify_issuance(iid: int, db: Session = Depends(get_db), x_user: str | None = Header(None)):
+    if not current_user(db, x_user):
+        raise HTTPException(401, "请通过 X-User 传入演示用户")
+    row = db.query(Issuance).get(iid)
+    if not row:
+        raise HTTPException(404, "未找到下发记录")
+    eff = _issuance_effect(db, row)
+    audit(db, x_user, "effect_verify", str(iid),
+          f"下发前 {eff['pre_grade']} → 下发后 {eff['post_grade']} · {eff['result']}")
+    return {"ok": True, **eff}
+
+
 # ---------------------------------------------------------------- frontend
 FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
 if FRONTEND_DIR.exists():

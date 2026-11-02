@@ -80,6 +80,9 @@ docker compose up --build
 | GET /api/models · POST /api/models/{id}/promote · POST /api/models/{id}/rollback · GET /api/models/drift | 模型版本、影子晋升、回退、漂移代理指标 |
 | GET /api/lighthouse · POST /api/lighthouse/weights · POST /api/changeovers | 权重、换产爬坡、9 包复制与放行门 |
 | GET /api/audit · GET /api/users | 审计日志（只读）与演示用户 |
+| GET /api/boxes/{barcode}/timeline | 箱体全生命周期时间线：六个闭环环节完成/待办、下一步、事件序列（第一批新增） |
+| GET /api/kpi/dual-track | 双轨 KPI：协议基线 vs 灯塔拔高目标 vs 当前值；无独立验证集的指标返回 null 并标“未验证”，不冒充达标 |
+| GET /api/issuances/effects · POST /api/issuances/{id}/verify | 下发效果验证：下发前最后一次热成像等级 vs 下发后最后一次，无下发后检测时标“待验证”并审计留痕 |
 
 ## 安全要点（代码可审计）
 

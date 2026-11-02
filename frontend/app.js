@@ -1,4 +1,4 @@
-const tabs = ["驾驶舱", "热成像", "追溯", "参数优化", "下发管控", "LLM工作台", "模型管理", "灯塔运营", "审计"];
+const tabs = ["驾驶舱", "闭环追踪", "热成像", "追溯", "参数优化", "下发管控", "LLM工作台", "模型管理", "灯塔运营", "审计"];
 let current = "驾驶舱";
 const main = document.getElementById("main");
 const userSel = document.getElementById("user");
@@ -29,7 +29,33 @@ const views = {
       <div class="kpi">知识条目<b>${d.kpis.knowledge_items}</b></div><div class="kpi">当前模式<b>${d.kpis.mode}</b></div></div>
       <p>系统状态：${s.stopped ? "已停止（异常）" : "正常"} · 生产模型：${d.kpis.production_model || "-"}</p>
       <p>闭环：${d.closed_loop.join(" → ")}</p>
-      <p class="note">协议基线：${JSON.stringify(d.protocol_baseline)}</p></div>`;
+      <p class="note">协议基线：${JSON.stringify(d.protocol_baseline)}</p>
+      <p>闭环时间线、协议 vs 灯塔双轨 KPI、下发效果验证见“闭环追踪”页签。</p></div>`;
+  },
+  async 闭环追踪() {
+    const kpi = await api("/api/kpi/dual-track"), eff = await api("/api/issuances/effects");
+    main.innerHTML = `<div class="card"><h2>闭环追踪：在线感知 → 质量判定 → 工艺分析 → 参数建议/受控下发 → 效果验证 → 知识沉淀</h2>
+      <p class="note">输入一个箱体条码，查看它走完闭环的每一步；没有走到的环节会明确标为待办，不会用演示数据冒充已完成。</p>
+      <input id="tb" placeholder="箱体条码，如 BX-B-0001" value="BX-B-0001" style="width:220px">
+      <button class="primary" onclick="lookupTimeline()">查本箱时间线</button><div id="timeline"></div></div>
+      <div class="card"><h3>双轨 KPI：协议基线 vs 灯塔拔高目标</h3>
+      <p class="note">生产模型：${kpi.production_model || "-"} · ${kpi.note}</p>
+      ${rows(kpi.rows, [["指标", "metric"], ["协议基线", "protocol"], ["灯塔目标", "lighthouse"], ["当前值", r => r.current === null ? "未验证" : r.current], ["状态", "status"], ["口径说明", "note"]])}</div>
+      <div class="card"><h3>下发效果验证</h3><p class="note">下发前等级为该箱体下发前最后一次热成像，下发后等级为下发后最后一次；没有下发后检测时明确标“待验证”，不补算。</p>
+      ${rows(eff, [["下发ID", "issuance_id"], ["箱体", "box_barcode"], ["状态", "status"], ["下发前", "pre_grade"], ["下发后", "post_grade"], ["结论", "result"], ["操作", r => `<button onclick="verifyIss(${r.issuance_id})">记录一次验证</button>`]])}<pre id="vout"></pre></div>`;
+    window.lookupTimeline = async () => {
+      const b = document.getElementById("tb").value.trim();
+      if (!b) return;
+      try {
+        const t = await api(`/api/boxes/${encodeURIComponent(b)}/timeline`);
+        document.getElementById("timeline").innerHTML = `<hr><p>箱体 ${t.box.barcode} · 夹具 ${t.box.fixture_no} · 产品 ${t.box.product} · 状态 ${t.box.status}</p>
+          <p>下一步：<b>${t.next_step}</b></p>
+          <p>环节：${t.stages.map(s => `${s.stage}：${s.done ? "已完成" : "待办"}`).join(" ｜ ")}</p>
+          ${rows(t.events, [["环节", "stage"], ["事件", "title"], ["详情", "detail"], ["时间", "created_at"]])}`;
+      } catch (e) { document.getElementById("timeline").innerHTML = `<p class="warn">${esc(e.message)}</p>`; }
+    };
+    window.verifyIss = async (id) => { const r = await api(`/api/issuances/${id}/verify`, "POST", {}); document.getElementById("vout").textContent = JSON.stringify(r, null, 2); };
+    window.lookupTimeline();
   },
   async 热成像() {
     const list = await api("/api/thermal-results");
