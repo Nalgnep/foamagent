@@ -83,6 +83,9 @@ docker compose up --build
 | GET /api/boxes/{barcode}/timeline | 箱体全生命周期时间线：六个闭环环节完成/待办、下一步、事件序列（第一批新增） |
 | GET /api/kpi/dual-track | 双轨 KPI：协议基线 vs 灯塔拔高目标 vs 当前值；无独立验证集的指标返回 null 并标“未验证”，不冒充达标 |
 | GET /api/issuances/effects · POST /api/issuances/{id}/verify | 下发效果验证：下发前最后一次热成像等级 vs 下发后最后一次，无下发后检测时标“待验证”并审计留痕 |
+| GET /api/models/adapters · POST /api/models/adapters/select | 模型适配器：优化接口走适配器，当前为本地规则；训练模型槽位未接入，选中会被拒绝 |
+| GET /api/models/mechanism-twin | 机理孪生约束框架状态：可行域校验已实现，趋势一致性/误差为 null（未用 ≥100 组数据验证） |
+| POST /api/validation/evaluate · GET /api/validation/runs | 独立验证：对调用方提供的冻结数据集计算严重漏检、高风险召回、误报率并给出协议结论，记录留存 |
 
 ## 安全要点（代码可审计）
 

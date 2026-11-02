@@ -1,4 +1,4 @@
-const tabs = ["驾驶舱", "闭环追踪", "热成像", "追溯", "参数优化", "下发管控", "LLM工作台", "模型管理", "灯塔运营", "审计"];
+const tabs = ["驾驶舱", "闭环追踪", "热成像", "追溯", "参数优化", "下发管控", "LLM工作台", "模型管理", "模型验证", "灯塔运营", "审计"];
 let current = "驾驶舱";
 const main = document.getElementById("main");
 const userSel = document.getElementById("user");
@@ -10,10 +10,22 @@ async function api(path, method = "GET", body = null) {
   return t;
 }
 function esc(s) { return String(s ?? "").replace(/</g, "&lt;"); }
+function badge(text, kind) { return `<span class="badge ${kind}">${esc(text)}</span>`; }
+function statusBadge(s) {
+  if (s && s.includes("达标")) return badge(s, "ok");
+  if (s && s.includes("未验证")) return badge(s, "neutral");
+  if (s && s.includes("演示口径")) return badge(s, "info");
+  if (s && s.includes("未达") || s && s.includes("恶化")) return badge(s, "bad");
+  if (s && s.includes("改善")) return badge(s, "ok");
+  return badge(s || "-", "neutral");
+}
 function rows(list, cols) {
   if (!list.length) return "<p class='note'>暂无数据</p>";
   return "<table><tr>" + cols.map(c => `<th>${c[0]}</th>`).join("") + "</tr>" +
-    list.map(r => "<tr>" + cols.map(c => `<td>${esc(typeof c[1] === "function" ? c[1](r) : r[c[1]])}</td>`).join("") + "</tr>").join("") + "</table>";
+    list.map(r => "<tr>" + cols.map(c => {
+      const v = typeof c[1] === "function" ? c[1](r) : r[c[1]];
+      return `<td>${String(v).startsWith("<span class=\"badge") ? v : esc(v)}</td>`;
+    }).join("") + "</tr>").join("") + "</table>";
 }
 async function render() {
   document.querySelectorAll("#nav button").forEach(b => b.classList.toggle("active", b.textContent === current));
@@ -22,15 +34,14 @@ async function render() {
 const views = {
   async 驾驶舱() {
     const d = await api("/api/dashboard"), s = await api("/api/system/state");
-    main.innerHTML = `<div class="card"><h2>驾驶舱</h2><div class="grid">
-      <div class="kpi">箱体数<b>${d.kpis.boxes}</b></div><div class="kpi">热成像检测<b>${d.kpis.thermal_checked}</b></div>
-      <div class="kpi">NG数<b>${d.kpis.ng_count}</b></div><div class="kpi">一次合格率<b>${(d.kpis.first_pass_rate * 100).toFixed(1)}%</b></div>
-      <div class="kpi">追溯异常待确认<b>${d.kpis.trace_exceptions_open}</b></div><div class="kpi">已下发<b>${d.kpis.issued_count}</b></div>
-      <div class="kpi">知识条目<b>${d.kpis.knowledge_items}</b></div><div class="kpi">当前模式<b>${d.kpis.mode}</b></div></div>
-      <p>系统状态：${s.stopped ? "已停止（异常）" : "正常"} · 生产模型：${d.kpis.production_model || "-"}</p>
-      <p>闭环：${d.closed_loop.join(" → ")}</p>
-      <p class="note">协议基线：${JSON.stringify(d.protocol_baseline)}</p>
-      <p>闭环时间线、协议 vs 灯塔双轨 KPI、下发效果验证见“闭环追踪”页签。</p></div>`;
+    main.innerHTML = `<div class="card"><div class="card-head"><h2>驾驶舱</h2>${s.stopped ? badge("已停止（异常）", "bad") : badge("运行正常", "ok")}</div><div class="grid">
+      <div class="kpi"><span>箱体数</span><b>${d.kpis.boxes}</b></div><div class="kpi"><span>热成像检测</span><b>${d.kpis.thermal_checked}</b></div>
+      <div class="kpi"><span>NG 数</span><b>${d.kpis.ng_count}</b></div><div class="kpi"><span>一次合格率</span><b>${(d.kpis.first_pass_rate * 100).toFixed(1)}%</b></div>
+      <div class="kpi"><span>追溯异常待确认</span><b>${d.kpis.trace_exceptions_open}</b></div><div class="kpi"><span>已下发</span><b>${d.kpis.issued_count}</b></div>
+      <div class="kpi"><span>知识条目</span><b>${d.kpis.knowledge_items}</b></div><div class="kpi"><span>当前模式</span><b>${d.kpis.mode}</b></div></div>
+      <p>生产模型：${d.kpis.production_model || "-"} · 演示数据（模拟），PLC 为模拟回执</p>
+      <div class="steps">${d.closed_loop.map(x => `<div class="step done"><span class="dot"></span>${x}</div>`).join("")}</div>
+      <p class="note">协议基线：${JSON.stringify(d.protocol_baseline)} · 闭环时间线、协议 vs 灯塔双轨 KPI、下发效果验证见“闭环追踪”页签；模型适配器与独立验证见“模型验证”页签。</p></div>`;
   },
   async 闭环追踪() {
     const kpi = await api("/api/kpi/dual-track"), eff = await api("/api/issuances/effects");
@@ -40,9 +51,9 @@ const views = {
       <button class="primary" onclick="lookupTimeline()">查本箱时间线</button><div id="timeline"></div></div>
       <div class="card"><h3>双轨 KPI：协议基线 vs 灯塔拔高目标</h3>
       <p class="note">生产模型：${kpi.production_model || "-"} · ${kpi.note}</p>
-      ${rows(kpi.rows, [["指标", "metric"], ["协议基线", "protocol"], ["灯塔目标", "lighthouse"], ["当前值", r => r.current === null ? "未验证" : r.current], ["状态", "status"], ["口径说明", "note"]])}</div>
+      ${rows(kpi.rows, [["指标", "metric"], ["协议基线", "protocol"], ["灯塔目标", "lighthouse"], ["当前值", r => r.current === null ? "未验证" : r.current], ["状态", r => statusBadge(r.status)], ["口径说明", "note"]])}</div>
       <div class="card"><h3>下发效果验证</h3><p class="note">下发前等级为该箱体下发前最后一次热成像，下发后等级为下发后最后一次；没有下发后检测时明确标“待验证”，不补算。</p>
-      ${rows(eff, [["下发ID", "issuance_id"], ["箱体", "box_barcode"], ["状态", "status"], ["下发前", "pre_grade"], ["下发后", "post_grade"], ["结论", "result"], ["操作", r => `<button onclick="verifyIss(${r.issuance_id})">记录一次验证</button>`]])}<pre id="vout"></pre></div>`;
+      ${rows(eff, [["下发ID", "issuance_id"], ["箱体", "box_barcode"], ["状态", "status"], ["下发前", "pre_grade"], ["下发后", "post_grade"], ["结论", r => statusBadge(r.result)], ["操作", r => `<button onclick="verifyIss(${r.issuance_id})">记录一次验证</button>`]])}<pre id="vout"></pre></div>`;
     window.lookupTimeline = async () => {
       const b = document.getElementById("tb").value.trim();
       if (!b) return;
@@ -50,7 +61,7 @@ const views = {
         const t = await api(`/api/boxes/${encodeURIComponent(b)}/timeline`);
         document.getElementById("timeline").innerHTML = `<hr><p>箱体 ${t.box.barcode} · 夹具 ${t.box.fixture_no} · 产品 ${t.box.product} · 状态 ${t.box.status}</p>
           <p>下一步：<b>${t.next_step}</b></p>
-          <p>环节：${t.stages.map(s => `${s.stage}：${s.done ? "已完成" : "待办"}`).join(" ｜ ")}</p>
+          <div class="steps">${t.stages.map(s => `<div class="step ${s.done ? "done" : ""}"><span class="dot"></span>${s.stage}<br><span class="note">${s.done ? "已完成" : "待办"}</span></div>`).join("")}</div>
           ${rows(t.events, [["环节", "stage"], ["事件", "title"], ["详情", "detail"], ["时间", "created_at"]])}`;
       } catch (e) { document.getElementById("timeline").innerHTML = `<p class="warn">${esc(e.message)}</p>`; }
     };
@@ -130,6 +141,33 @@ const views = {
       ${rows(list, [["模型", "name"], ["版本", "version"], ["状态", "status"], ["召回", "recall"], ["误报", "false_alarm"], ["操作", r => r.status === "shadow" ? `<button onclick="promote(${r.id})">影子晋升生产</button>` : `<button onclick="rollbackM(${r.id})">回退到此版本</button>`]])}</div>`;
     window.promote = async (id) => { await api(`/api/models/${id}/promote`, "POST", {}); render(); };
     window.rollbackM = async (id) => { await api(`/api/models/${id}/rollback`, "POST", {}); render(); };
+  },
+  async 模型验证() {
+    const ad = await api("/api/models/adapters"), twin = await api("/api/models/mechanism-twin"), runs = await api("/api/validation/runs");
+    const example = JSON.stringify([
+      { material_ratio: 1.08, material_temp: 22, core_temp: 45, curing_time: 360, fixture_temp: 40, is_ng: 0, is_high_risk: 0, is_severe: 0 },
+      { material_ratio: 1.30, material_temp: 35, core_temp: 70, curing_time: 60, fixture_temp: 60, is_ng: 1, is_high_risk: 1, is_severe: 1 }
+    ], null, 2);
+    main.innerHTML = `<div class="card"><div class="card-head"><h2>模型验证：适配器与独立验证</h2>${badge("当前适配器：" + ad.active, "info")}</div>
+      <p class="note">优化接口已改为走模型适配器：当前为本地规则；训练模型槽位未接入，选中会被后端拒绝，直到提供模型文件、特征清单并通过独立验证。</p>
+      ${rows(ad.adapters, [["适配器", "name"], ["类型", "kind"], ["已接入", r => r.loaded ? "是" : "否"], ["当前", r => r.active ? "是" : "否"], ["说明", "description"], ["操作", r => r.loaded && !r.active ? `<button onclick="selectAd('${r.name}')">设为当前</button>` : "-"]])}</div>
+      <div class="card"><h3>机理孪生（约束框架，未验证）</h3>
+      <p>状态：${twin.status} · 需验证组数：${twin.required_groups} · 趋势一致性要求：≥${(twin.trend_consistency_required * 100).toFixed(0)}% · 归一化误差上限：${twin.normalized_error_max} · 已验证组数：${twin.validated_groups} · 趋势一致性：${twin.trend_consistency === null ? "未验证" : twin.trend_consistency}</p>
+      <p class="note">${twin.note}</p></div>
+      <div class="card"><h3>跑一次独立验证</h3>
+      <p class="note">粘贴冻结验证集 JSON（每条含 5 个工艺参数 + is_ng，is_high_risk / is_severe 可选）。预测 NG 的口径固定为：缺陷概率 ≥0.50 或超出可行域。结论只对这批样本负责。</p>
+      <input id="dsname" placeholder="数据集名称，如 2026-11-冻结验证集A" style="width:320px">
+      <textarea id="dsjson">${esc(example)}</textarea>
+      <div class="toolbar"><button class="primary" onclick="runVal()">运行验证并留存</button></div><pre id="valout"></pre></div>
+      <div class="card"><h3>验证记录</h3>${rows(runs, [["ID", "id"], ["适配器", "adapter"], ["数据集", "dataset_name"], ["样本数", "sample_count"], ["严重漏检", "severe_miss"], ["高风险召回", "high_risk_recall"], ["误报率", "false_alarm_rate"], ["结论", r => statusBadge(r.verdict)]])}</div>`;
+    window.selectAd = async (name) => { await api("/api/models/adapters/select", "POST", { adapter: name }); render(); };
+    window.runVal = async () => {
+      try {
+        const samples = JSON.parse(document.getElementById("dsjson").value);
+        const r = await api("/api/validation/evaluate", "POST", { dataset_name: document.getElementById("dsname").value, samples });
+        document.getElementById("valout").textContent = JSON.stringify(r, null, 2); render();
+      } catch (e) { document.getElementById("valout").textContent = "失败：" + e.message; }
+    };
   },
   async 灯塔运营() {
     const d = await api("/api/lighthouse");

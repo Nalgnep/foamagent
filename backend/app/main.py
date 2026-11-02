@@ -23,9 +23,12 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 
 from .database import get_db, init_db
+from .model_interface import (TWIN, evaluate_validation, get_adapter,
+                              get_adapters)
 from .models import (AuditLog, Box, Changeover, Issuance, KnowledgeItem,
                      ModelVersion, ProcessRecord, ReplicationPack, Setting,
-                     Suggestion, ThermalResult, TraceException, User)
+                     Suggestion, ThermalResult, TraceException, User,
+                     ValidationRun)
 from .rules import (SAFE_BASELINE, WHITELIST, grade_thermal, predict,
                     safety_checks, suggest, is_out_of_distribution)
 
@@ -240,7 +243,10 @@ def optimize(payload: dict, db: Session = Depends(get_db),
     params = {k: float(payload[k]) for k in
               ("material_ratio", "material_temp", "core_temp", "curing_time", "fixture_temp")
               if k in payload}
-    result = suggest(params, weights_of(db))
+    adapter_name = get_setting(db, "model_adapter", "rules")
+    adapter = get_adapter(adapter_name) or get_adapter("rules")
+    result = adapter.suggest(params, weights_of(db))
+    twin = TWIN.check(params)
     ood = is_out_of_distribution(params)
     routed = bool(not result["feasible"] or result["confidence"] < 0.70 or ood)
     sug = Suggestion(box_barcode=payload.get("box_barcode", ""),
@@ -260,7 +266,8 @@ def optimize(payload: dict, db: Session = Depends(get_db),
             "feasible": result["feasible"], "reasons": result["reasons"],
             "suggested": result["suggested"], "objective_score": result["objective_score"],
             "defect_probability": result["defect_probability"],
-            "confidence": result["confidence"], "model_note": result["model_note"]}
+            "confidence": result["confidence"], "model_note": result["model_note"],
+            "model_adapter": adapter.name, "mechanism_twin": twin}
 
 
 @app.get("/api/suggestions")
@@ -520,6 +527,68 @@ def list_audit(db: Session = Depends(get_db)):
 def list_users(db: Session = Depends(get_db)):
     return [{"username": u.username, "role": u.role, "display_name": u.display_name}
             for u in db.query(User).all()]
+
+
+# ---------------------------------------------------------------- model adapters / validation (batch 2, part 1)
+@app.get("/api/models/adapters")
+def list_adapters(db: Session = Depends(get_db)):
+    active = get_setting(db, "model_adapter", "rules")
+    return {"active": active, "adapters": get_adapters(active)}
+
+
+@app.post("/api/models/adapters/select")
+def select_adapter(payload: dict, db: Session = Depends(get_db), x_user: str | None = Header(None)):
+    require(db, x_user, "model")
+    adapter = get_adapter(payload.get("adapter", ""))
+    if not adapter:
+        raise HTTPException(404, "未找到该模型适配器")
+    if not adapter.loaded:
+        raise HTTPException(400, "该适配器未接入：需提供模型文件、特征清单与独立验证集后方可启用")
+    set_setting(db, "model_adapter", adapter.name)
+    audit(db, x_user, "model_adapter_select", adapter.name, "切换生产模型适配器")
+    return {"ok": True, "active": adapter.name}
+
+
+@app.get("/api/models/mechanism-twin")
+def mechanism_twin_status():
+    return TWIN.validation_status()
+
+
+@app.post("/api/validation/evaluate")
+def validation_evaluate(payload: dict, db: Session = Depends(get_db), x_user: str | None = Header(None)):
+    require(db, x_user, "suggest")
+    samples = payload.get("samples", [])
+    if not isinstance(samples, list) or not samples:
+        raise HTTPException(400, "samples 必须是非空列表")
+    required = ("material_ratio", "material_temp", "core_temp", "curing_time", "fixture_temp", "is_ng")
+    try:
+        for s in samples:
+            for k in required:
+                float(s[k])
+    except Exception:
+        raise HTTPException(400, f"每条样本必须包含数值字段：{', '.join(required)}")
+    adapter_name = get_setting(db, "model_adapter", "rules")
+    adapter = get_adapter(adapter_name) or get_adapter("rules")
+    metrics = evaluate_validation(adapter, samples)
+    run = ValidationRun(adapter=adapter.name, dataset_name=payload.get("dataset_name", ""),
+                        sample_count=metrics["sample_count"], severe_miss=metrics["severe_miss"],
+                        high_risk_recall=metrics["high_risk_recall"],
+                        false_alarm_rate=metrics["false_alarm_rate"],
+                        accuracy=metrics["accuracy"], verdict=metrics["verdict"],
+                        detail_json=json.dumps(metrics, ensure_ascii=False))
+    db.add(run); db.commit()
+    audit(db, x_user, "validation_evaluate", str(run.id),
+          f"适配器 {adapter.name} · 样本 {metrics['sample_count']} · 结论 {metrics['verdict']}")
+    return {"run_id": run.id, "adapter": adapter.name, **metrics}
+
+
+@app.get("/api/validation/runs")
+def validation_runs(db: Session = Depends(get_db)):
+    return [{"id": r.id, "adapter": r.adapter, "dataset_name": r.dataset_name,
+             "sample_count": r.sample_count, "severe_miss": r.severe_miss,
+             "high_risk_recall": r.high_risk_recall, "false_alarm_rate": r.false_alarm_rate,
+             "accuracy": r.accuracy, "verdict": r.verdict, "created_at": str(r.created_at)}
+            for r in db.query(ValidationRun).order_by(ValidationRun.id.desc()).limit(200)]
 
 
 # ---------------------------------------------------------------- closed-loop tracking (batch 1)

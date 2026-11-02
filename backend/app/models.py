@@ -133,6 +133,21 @@ class ModelVersion(Base):
     created_at = Column(DateTime, default=_now)
 
 
+class ValidationRun(Base):
+    __tablename__ = "validation_runs"
+    id = Column(Integer, primary_key=True)
+    adapter = Column(String, default="rules")
+    dataset_name = Column(String, default="")
+    sample_count = Column(Integer, default=0)
+    severe_miss = Column(Integer, default=0)
+    high_risk_recall = Column(Float, nullable=True)
+    false_alarm_rate = Column(Float, nullable=True)
+    accuracy = Column(Float, nullable=True)
+    verdict = Column(String, default="")
+    detail_json = Column(Text, default="{}")
+    created_at = Column(DateTime, default=_now)
+
+
 class Setting(Base):
     __tablename__ = "settings"
     id = Column(Integer, primary_key=True)
