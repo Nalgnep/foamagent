@@ -733,6 +733,9 @@ def verify_issuance(iid: int, db: Session = Depends(get_db), x_user: str | None 
 
 
 # ---------------------------------------------------------------- frontend
-FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
+# Vue 3 + Element Plus build (web/dist) takes precedence when present;
+# otherwise fall back to the legacy vanilla frontend/ directory.
+_ROOT = Path(__file__).resolve().parents[2]
+FRONTEND_DIR = _ROOT / "web" / "dist" if (_ROOT / "web" / "dist" / "index.html").exists() else _ROOT / "frontend"
 if FRONTEND_DIR.exists():
     app.mount("/", StaticFiles(directory=str(FRONTEND_DIR), html=True), name="frontend")

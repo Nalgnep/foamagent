@@ -112,7 +112,8 @@ backend/app/models.py     # SQLite 模型（含追加式审计表）
 backend/app/rules.py      # 本地确定性规则（非训练模型，见 LIMITATIONS.md）
 backend/app/database.py   # 数据库连接
 backend/seed.py           # 演示种子数据
-frontend/                 # SPA：index.html / app.js / style.css（顶栏 + 左侧导航 + 仪表盘布局）
+frontend/                 # 旧版原生 JS 前端（仅在 web/dist 不存在时作为回退挂载）
+web/                      # Vue 3 + Element Plus 前端：npm install && npm run build，产物 web/dist 由后端优先挂载；Docker 多阶段构建会在镜像内构建，dist 与 node_modules 不入库
 tests/test_smoke.py       # 冒烟测试
 Dockerfile                # 容器化
 docker-compose.yml        # 一键启动
