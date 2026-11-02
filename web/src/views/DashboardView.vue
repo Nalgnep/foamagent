@@ -4,8 +4,8 @@
       <div><h2>仪表盘</h2><p>成都 B 线箱体发泡 · 在线感知 — 质量判定 — 工艺分析 — 建议 / 下发 — 效果验证 — 知识沉淀</p></div>
       <el-tag type="success" size="large">热成像一体机在线</el-tag>
     </div>
-    <el-row :gutter="20" style="margin-bottom: 20px">
-      <el-col :span="4" v-for="k in kpis" :key="k.label">
+    <el-row class="equal-row" :gutter="20" style="margin-bottom: 20px">
+      <el-col :xs="12" :sm="8" :lg="4" v-for="k in kpis" :key="k.label">
         <el-card shadow="hover" class="kpi-card">
           <div class="kpi-top"><span :class="'kpi-tile ' + k.tile">{{ k.icon }}</span></div>
           <div class="kpi-label">{{ k.label }}</div>
@@ -15,8 +15,8 @@
       </el-col>
     </el-row>
 
-    <el-row :gutter="20" style="margin-bottom: 20px">
-      <el-col :span="14">
+    <el-row class="equal-row" :gutter="20" style="margin-bottom: 20px">
+      <el-col :xs="24" :md="14">
         <el-card>
           <template #header><div class="panel-head"><span>智能体 · 根因分析</span><span class="sub">候选根因来自知识库，非最终判定</span></div></template>
           <el-table :data="ngCases" empty-text="暂无 NG 案例">
@@ -33,7 +33,7 @@
           </el-table>
         </el-card>
       </el-col>
-      <el-col :span="10">
+      <el-col :xs="24" :md="10">
         <el-card>
           <template #header><div class="panel-head"><span>智能体 · 参数建议</span><el-button link @click="$emit('navigate', 'optimize', '参数建议报告')">根据快查</el-button></div></template>
           <div v-if="!sugs.length"><el-empty description="暂无参数建议" /></div>
@@ -55,8 +55,8 @@
       </el-col>
     </el-row>
 
-    <el-row :gutter="20" style="margin-bottom: 20px">
-      <el-col :span="14">
+    <el-row class="equal-row" :gutter="20" style="margin-bottom: 20px">
+      <el-col :xs="24" :md="14">
         <el-card>
           <template #header><div class="panel-head"><span>质量率趋势</span><span class="sub">按检测序列累计</span></div></template>
           <p class="legend"><span><i style="background:#16a34a"></i>OK率</span><span><i style="background:#f59e0b"></i>RISK率</span><span><i style="background:#dc2626"></i>NG率</span></p>
@@ -66,7 +66,7 @@
       </el-col>
     </el-row>
 
-    <el-row :gutter="20">
+    <el-row class="equal-row" :gutter="20">
       <el-col :span="24">
         <el-card>
           <template #header><div class="panel-head"><span>当前箱体</span><span class="sub">最新一条记录</span></div></template>
@@ -79,7 +79,7 @@
           </div>
         </el-card>
       </el-col>
-      <el-col :span="10">
+      <el-col :xs="24" :md="10">
         <el-card>
           <template #header><div class="panel-head"><span>本班判定分布</span><span class="sub">共 {{ thermals.length }} 台</span></div></template>
           <div style="display:flex; justify-content:center"><DonutChart :ok="okCount" :risk="riskCount" :ng="ngCount" /></div>

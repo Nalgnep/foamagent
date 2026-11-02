@@ -115,3 +115,16 @@ html, body, #app { margin: 0; min-height: 100%; background: var(--bg); color: va
 .suggest-item .p { color: var(--muted); font-size: 13px; margin: 6px 0 8px; line-height: 1.6; }
 .dist-legend { display: flex; justify-content: center; gap: 22px; margin-top: 10px; font-size: 14px; flex-wrap: wrap; }
 .dist-legend .n { color: var(--muted); font-size: 12.5px; }
+
+/* ---- dashboard alignment: equal-height cards per row, responsive stacking ---- */
+.equal-row { align-items: stretch; }
+.equal-row > .el-col { display: flex; flex-direction: column; }
+.equal-row > .el-col > .el-card { flex: 1; height: 100%; display: flex; flex-direction: column; }
+.equal-row > .el-col > .el-card > .el-card__body { flex: 1; }
+.page-head { align-items: center; }
+.panel-head { align-items: center; }
+.panel-head .sub { text-align: right; flex-shrink: 0; }
+.kpi-card { height: 100%; }
+.kpi-card .el-card__body { display: flex; flex-direction: column; }
+.kpi-value { margin-top: 2px; }
+.kpi-sub { min-height: 18px; }
