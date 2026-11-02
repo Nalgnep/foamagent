@@ -123,7 +123,8 @@ def dashboard(db: Session = Depends(get_db)):
 @app.get("/api/boxes")
 def list_boxes(db: Session = Depends(get_db)):
     return [{"barcode": b.barcode, "fixture_no": b.fixture_no, "product": b.product,
-             "status": b.status} for b in db.query(Box).order_by(Box.id.desc()).limit(200)]
+             "status": b.status, "created_at": str(b.created_at)}
+            for b in db.query(Box).order_by(Box.id.desc()).limit(200)]
 
 
 @app.post("/api/boxes")
@@ -181,7 +182,7 @@ def review_thermal(rid: int, payload: dict, db: Session = Depends(get_db),
 def list_thermal(db: Session = Depends(get_db)):
     return [{"id": r.id, "box_barcode": r.box_barcode, "grade": r.grade,
              "max_bubble_mm": r.max_bubble_mm, "bubble_count": r.bubble_count,
-             "is_ng": bool(r.is_ng), "reviewed_by": r.reviewed_by}
+             "is_ng": bool(r.is_ng), "reviewed_by": r.reviewed_by, "created_at": str(r.created_at)}
             for r in db.query(ThermalResult).order_by(ThermalResult.id.desc()).limit(200)]
 
 

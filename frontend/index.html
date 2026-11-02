@@ -7,12 +7,20 @@
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-<header>
-<div><h1>成都B线 · 发泡工艺智能体管理系统</h1><p>热成像在线检测 · 箱体条码追溯 · 发泡参数优化智能体 ｜ 闭环：感知 → 判定 → 分析 → 建议/下发 → 验证 → 沉淀</p><p>演示数据（模拟）· PLC 为模拟回执 · 不可直接用于真实产线控制</p></div>
-<div><label>演示用户 <select id="user"></select></label><div class="note" id="who"></div></div>
+<header class="topbar">
+  <div class="brand"><span class="logo">Hisense</span><span class="sys">发泡工艺智能系统</span><span class="page" id="pageTitle">仪表盘</span></div>
+  <div class="top-links">
+    <button class="toplink" onclick="go('热成像')">热成像系统</button>
+    <button class="toplink" onclick="go('LLM工作台')">智能体平台</button>
+    <span class="bell" title="未复核 NG">🔔<span class="bell-badge" id="bellBadge"></span></span>
+    <label>演示用户 <select id="user"></select></label>
+    <span class="who" id="who"></span>
+  </div>
 </header>
-<nav id="nav"></nav>
-<main id="main"></main>
+<div class="layout">
+  <aside id="sidebar"></aside>
+  <main id="main"></main>
+</div>
 <script src="/app.js"></script>
 </body>
 </html>

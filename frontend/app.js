@@ -1,5 +1,21 @@
-const tabs = ["驾驶舱", "闭环追踪", "热成像", "追溯", "参数优化", "下发管控", "LLM工作台", "模型管理", "模型验证", "灯塔运营", "审计"];
+const menu = [
+  { title: "", items: [{ label: "仪表盘", view: "驾驶舱" }] },
+  { title: "", items: [{ label: "我的待办", view: "追溯" }] },
+  { title: "模型检测", items: [{ label: "复核判定", view: "热成像" }, { label: "记录查询", view: "审计" }, { label: "质量分析", view: "闭环追踪" }] },
+  { title: "追溯管理", items: [{ label: "箱体追溯", view: "追溯" }, { label: "异常处理", view: "追溯" }, { label: "批次分析", view: "灯塔运营" }] },
+  { title: "模型库", items: [{ label: "边缘模型", view: "模型管理" }, { label: "机理模型", view: "模型验证" }, { label: "模型体检", view: "模型验证" }] },
+  { title: "智能体", items: [{ label: "根因分析报告", view: "LLM工作台" }, { label: "参数建议报告", view: "参数优化" }] },
+  { title: "系统管控", items: [{ label: "全程留痕", view: "审计" }] },
+];
 let current = "驾驶舱";
+let currentLabel = "仪表盘";
+function renderSidebar() {
+  document.getElementById("sidebar").innerHTML = menu.map(g =>
+    (g.title ? `<div class="menu-group">${g.title}</div>` : "") +
+    g.items.map(i => `<button class="menu-item ${currentLabel === i.label ? "active" : ""}" onclick="go('${i.view}','${i.label}')">${i.label}</button>`).join("")
+  ).join("");
+  document.getElementById("pageTitle").textContent = currentLabel;
+}
 const main = document.getElementById("main");
 const userSel = document.getElementById("user");
 function headers() { return { "Content-Type": "application/json", "X-User": userSel.value }; }
@@ -28,20 +44,82 @@ function rows(list, cols) {
     }).join("") + "</tr>").join("") + "</table>";
 }
 async function render() {
-  document.querySelectorAll("#nav button").forEach(b => b.classList.toggle("active", b.textContent === current));
+  renderSidebar();
   try { await views[current](); } catch (e) { main.innerHTML = `<div class="card warn">请求失败：${esc(e.message)}<br>请先确认后端已启动且已选择演示用户。</div>`; }
 }
 const views = {
   async 驾驶舱() {
-    const d = await api("/api/dashboard"), s = await api("/api/system/state");
-    main.innerHTML = `<div class="card"><div class="card-head"><h2>驾驶舱</h2>${s.stopped ? badge("已停止（异常）", "bad") : badge("运行正常", "ok")}</div><div class="grid">
-      <div class="kpi"><span>箱体数</span><b>${d.kpis.boxes}</b></div><div class="kpi"><span>热成像检测</span><b>${d.kpis.thermal_checked}</b></div>
-      <div class="kpi"><span>NG 数</span><b>${d.kpis.ng_count}</b></div><div class="kpi"><span>一次合格率</span><b>${(d.kpis.first_pass_rate * 100).toFixed(1)}%</b></div>
-      <div class="kpi"><span>追溯异常待确认</span><b>${d.kpis.trace_exceptions_open}</b></div><div class="kpi"><span>已下发</span><b>${d.kpis.issued_count}</b></div>
-      <div class="kpi"><span>知识条目</span><b>${d.kpis.knowledge_items}</b></div><div class="kpi"><span>当前模式</span><b>${d.kpis.mode}</b></div></div>
-      <p>生产模型：${d.kpis.production_model || "-"} · 演示数据（模拟），PLC 为模拟回执</p>
-      <div class="steps">${d.closed_loop.map(x => `<div class="step done"><span class="dot"></span>${x}</div>`).join("")}</div>
-      <p class="note">协议基线：${JSON.stringify(d.protocol_baseline)} · 闭环时间线、协议 vs 灯塔双轨 KPI、下发效果验证见“闭环追踪”页签；模型适配器与独立验证见“模型验证”页签。</p></div>`;
+    const d = await api("/api/dashboard"), st = await api("/api/system/state");
+    const thermals = await api("/api/thermal-results"), exceptions = await api("/api/trace/exceptions");
+    const boxes = await api("/api/boxes"), sugs = await api("/api/suggestions"), knowledge = await api("/api/knowledge");
+    const openExc = exceptions.filter(e => e.status === "待确认/关联异常");
+    const resolvedExc = exceptions.filter(e => e.status !== "待确认/关联异常");
+    const unreviewedNG = thermals.filter(t => t.is_ng && !t.reviewed_by);
+    const reviewed = thermals.filter(t => t.reviewed_by);
+    const today = new Date().toISOString().slice(0, 10);
+    const todayCount = thermals.filter(t => (t.created_at || "").slice(0, 10) === today).length;
+    const kpi = (icon, label, value, sub) => `<div class="kpi-card"><div class="icon">${icon}</div><div class="label">${label}</div><b>${value}</b><div class="sub">${sub}</div></div>`;
+    const seq = [...thermals].reverse();
+    let cumNG = 0, cumC = 0;
+    const ptsNG = [], ptsOK = [], ptsRisk = [];
+    seq.forEach((t, i) => {
+      cumNG += t.is_ng ? 1 : 0; cumC += (t.grade === "C" && !t.is_ng) ? 1 : 0;
+      const x = seq.length === 1 ? 150 : 10 + i * 280 / (seq.length - 1);
+      ptsNG.push(`${x.toFixed(1)},${(110 - cumNG / (i + 1) * 100).toFixed(1)}`);
+      ptsRisk.push(`${x.toFixed(1)},${(110 - cumC / (i + 1) * 100).toFixed(1)}`);
+      ptsOK.push(`${x.toFixed(1)},${(110 - (1 - cumNG / (i + 1)) * 100).toFixed(1)}`);
+    });
+    const trendSvg = seq.length ? `<svg viewBox="0 0 300 120" width="100%" height="150">
+      <line x1="10" y1="10" x2="10" y2="110" stroke="#e2e8f0"/><line x1="10" y1="110" x2="290" y2="110" stroke="#e2e8f0"/>
+      <polyline points="${ptsOK.join(" ")}" fill="none" stroke="#16a34a" stroke-width="2"/>
+      <polyline points="${ptsRisk.join(" ")}" fill="none" stroke="#f59e0b" stroke-width="2"/>
+      <polyline points="${ptsNG.join(" ")}" fill="none" stroke="#dc2626" stroke-width="2"/></svg>` : "<p class='note'>暂无检测序列</p>";
+    const okCount = thermals.filter(t => (t.grade === "A" || t.grade === "B") && !t.is_ng).length;
+    const riskCount = thermals.filter(t => t.grade === "C" && !t.is_ng).length;
+    const ngCount = thermals.filter(t => t.is_ng).length;
+    const total = thermals.length || 1;
+    const donut = (counts) => {
+      const C = 2 * Math.PI * 54; let off = 0;
+      return counts.map(([label, n, color]) => {
+        const len = n / total * C; const seg = `<circle cx="70" cy="70" r="54" fill="none" stroke="${color}" stroke-width="18" stroke-dasharray="${len.toFixed(1)} ${(C - len).toFixed(1)}" stroke-dashoffset="${(-off).toFixed(1)}" transform="rotate(-90 70 70)"/>`;
+        off += len; return seg;
+      }).join("");
+    };
+    const latestBox = boxes[0] || {};
+    const latestThermal = thermals[0] || {};
+    const latestSug = sugs[0] || {};
+    const ngCases = thermals.filter(t => t.is_ng).slice(0, 5);
+    main.innerHTML = `<div class="card-head"><h2>仪表盘</h2>${st.stopped ? badge("已停止（异常）", "bad") : badge("热成像一体机在线", "ok")}</div>
+      <div class="kpi-row">
+        ${kpi("☑", "我的待办", openExc.length + unreviewedNG.length, "异常待确认 + 未复核 NG")}
+        ${kpi("🔥", "紧急待办", unreviewedNG.length, "未复核 NG 箱体")}
+        ${kpi("⚠", "待处理异常", openExc.length, "追溯异常队列")}
+        ${kpi("✓", "当班已处理", resolvedExc.length + reviewed.length, "已修正异常 + 已复核")}
+        ${kpi("📷", "今日检测", todayCount, "按检测日期统计（演示库）")}
+        ${kpi("🗄", "累计检测", thermals.length, "演示库检测总数")}
+      </div>
+      <div class="panel-row">
+        <div class="card"><div class="card-head"><h3>智能体 · 根因分析</h3><span class="note">候选根因来自知识库，非最终判定</span></div>
+          ${ngCases.length ? rows(ngCases, [["触发", r => r.grade === "D" ? "高风险" : "人工发起"], ["根因候选", r => knowledge.slice(0, 2).map(k => k.title).join("；") || "-"], ["箱体", "box_barcode"], ["气泡", r => `${r.max_bubble_mm}mm / ${r.bubble_count}个`]]) : "<p class='note'>暂无 NG 案例</p>"}</div>
+        <div class="card"><div class="card-head"><h3>智能体 · 参数建议</h3><button class="ghost" onclick="go('参数优化','参数建议报告')">根据快查</button></div>
+          ${sugs.slice(0, 3).map(s => `<div class="suggest-card"><div><b>建议 #${s.id}</b> · ${s.box_barcode || "未关联箱体"} ${badge("置信度 " + Math.round(s.confidence * 100) + "%", s.confidence >= 0.7 ? "ok" : "warn")}</div>
+          <div class="note">料比 ${s.suggested.material_ratio} · 料温 ${s.suggested.material_temp}℃ · 模芯 ${s.suggested.core_temp}℃ · 固化 ${s.suggested.curing_time}s · 目标分 ${s.objective_score}</div>
+          <div>${s.feasible ? badge("可行域内", "ok") : badge("超出可行域", "bad")} ${s.routed_to_llm ? badge("已转 LLM", "info") : ""} · 状态 ${s.status}</div></div>`).join("") || "<p class='note'>暂无参数建议</p>"}</div>
+        <div class="card"><div class="card-head"><h3>质量率趋势</h3><span class="note">按检测序列累计</span></div>
+          <p class="note"><span style="color:#16a34a">━ OK率</span> <span style="color:#f59e0b">━ RISK率</span> <span style="color:#dc2626">━ NG率</span></p>${trendSvg}
+          <p class="note">样本 ${thermals.length} 台 · 当前一次合格率 ${(d.kpis.first_pass_rate * 100).toFixed(1)}%（演示数据）</p></div>
+      </div>
+      <div class="panel-row two">
+        <div class="card"><div class="card-head"><h3>当前箱体</h3><span class="note">最新一条记录</span></div>
+          <table><tr><td>时间</td><td>${latestBox.created_at || "-"}</td></tr><tr><td>箱体</td><td>${latestBox.barcode || "-"} · 夹具 ${latestBox.fixture_no || "-"} · ${latestBox.product || "-"}</td></tr>
+          <tr><td>热成像</td><td>${latestThermal.grade || "-"} · ${latestThermal.max_bubble_mm ?? "-"}mm · ${latestThermal.bubble_count ?? "-"}个 ${latestThermal.is_ng ? badge("RISK", "warn") : badge("OK", "ok")}</td></tr>
+          <tr><td>最新建议</td><td>${latestSug.id ? `#${latestSug.id} · 置信度 ${Math.round(latestSug.confidence * 100)}% · 缺陷概率 ${latestSug.defect_probability}` : "暂无"}</td></tr>
+          <tr><td>产线</td><td>模式 ${st.mode} · ${st.stopped ? "已停止" : "正常"}</td></tr></table></div>
+        <div class="card"><div class="card-head"><h3>本班判定分布</h3><span class="note">共 ${thermals.length} 台</span></div>
+          <svg viewBox="0 0 140 140" width="150" height="150">${donut([["OK", okCount, "#16a34a"], ["RISK", riskCount, "#f59e0b"], ["NG", ngCount, "#dc2626"]])}<text x="70" y="66" text-anchor="middle" font-size="20" font-weight="700">${thermals.length}</text><text x="70" y="84" text-anchor="middle" font-size="11" fill="#64748b">本班已检</text></svg>
+          <p>OK <b>${okCount}</b> · ${(okCount / total * 100).toFixed(1)}% ｜ RISK <b>${riskCount}</b> · ${(riskCount / total * 100).toFixed(1)}% ｜ NG <b>${ngCount}</b> · ${(ngCount / total * 100).toFixed(1)}%</p>
+          <p class="note">OK 为 A/B 且非 NG；RISK 为 C 且非 NG；NG 为热成像 NG 判定。</p></div>
+      </div>`;
   },
   async 闭环追踪() {
     const kpi = await api("/api/kpi/dual-track"), eff = await api("/api/issuances/effects");
@@ -187,12 +265,17 @@ const views = {
     main.innerHTML = `<div class="card"><h2>审计日志（只读 · 追加式）</h2><p class="note">审计表无修改/删除接口，任何操作、审批、修正、启停、回退均留痕。</p>${rows(list, [["时间", "created_at"], ["操作人", "actor"], ["动作", "action"], ["对象", "entity"], ["详情", "detail"]])}</div>`;
   }
 };
-document.getElementById("nav").innerHTML = tabs.map(t => `<button onclick="go('${t}')">${t}</button>`).join("");
-window.go = (t) => { current = t; render(); };
+window.go = (t, label) => { current = t; currentLabel = label || t; render(); };
 (async () => {
   const users = await api("/api/users");
   userSel.innerHTML = users.map(u => `<option value="${u.username}">${u.display_name}（${u.username} · ${u.role}）</option>`).join("");
   userSel.value = "process_engineer";
-  userSel.onchange = render;
+  userSel.onchange = () => { const u = users.find(x => x.username === userSel.value); document.getElementById("who").textContent = u ? u.display_name : ""; render(); };
+  document.getElementById("who").textContent = "工艺工程师";
+  try {
+    const thermals = await api("/api/thermal-results");
+    const unreviewed = thermals.filter(t => t.is_ng && !t.reviewed_by).length;
+    document.getElementById("bellBadge").textContent = unreviewed ? unreviewed : "";
+  } catch (e) { /* bell badge is best-effort */ }
   render();
 })();

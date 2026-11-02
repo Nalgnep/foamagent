@@ -112,7 +112,7 @@ backend/app/models.py     # SQLite 模型（含追加式审计表）
 backend/app/rules.py      # 本地确定性规则（非训练模型，见 LIMITATIONS.md）
 backend/app/database.py   # 数据库连接
 backend/seed.py           # 演示种子数据
-frontend/                 # SPA：index.html / app.js / style.css
+frontend/                 # SPA：index.html / app.js / style.css（顶栏 + 左侧导航 + 仪表盘布局）
 tests/test_smoke.py       # 冒烟测试
 Dockerfile                # 容器化
 docker-compose.yml        # 一键启动
