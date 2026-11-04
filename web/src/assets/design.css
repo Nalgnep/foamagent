@@ -113,8 +113,10 @@ html, body, #app { margin: 0; min-height: 100%; background: var(--bg); color: va
 .suggest-item:last-child { margin-bottom: 0; }
 .suggest-item .t { font-weight: 600; font-size: 14px; display: flex; justify-content: space-between; gap: 10px; align-items: center; }
 .suggest-item .p { color: var(--muted); font-size: 13px; margin: 6px 0 8px; line-height: 1.6; }
-.dist-legend { display: flex; justify-content: center; gap: 22px; margin-top: 10px; font-size: 14px; flex-wrap: wrap; }
+.dist-legend { display: flex; justify-content: center; gap: 28px; margin-top: 12px; font-size: 14px; flex-wrap: wrap; }
+.dist-legend > span { display: inline-flex; align-items: baseline; gap: 6px; white-space: nowrap; }
 .dist-legend .n { color: var(--muted); font-size: 12.5px; }
+.trend-chart { display: block; width: 100%; }
 
 /* ---- dashboard alignment: equal-height cards per row, responsive stacking ---- */
 .equal-row { align-items: stretch; }

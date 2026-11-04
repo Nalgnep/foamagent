@@ -64,6 +64,18 @@
           <p class="card-note" style="margin: 12px 0 0">样本 {{ thermals.length }} 台 · 当前一次合格率 {{ (dashboard.kpis.first_pass_rate * 100).toFixed(1) }}%（演示数据）</p>
         </el-card>
       </el-col>
+      <el-col :xs="24" :md="10">
+        <el-card>
+          <template #header><div class="panel-head"><span>本班判定分布</span><span class="sub">共 {{ thermals.length }} 台</span></div></template>
+          <div style="display:flex; justify-content:center"><DonutChart :ok="okCount" :risk="riskCount" :ng="ngCount" /></div>
+          <div class="dist-legend">
+            <span>OK <b>{{ okCount }}</b> <span class="n">{{ pct(okCount) }}</span></span>
+            <span>RISK <b>{{ riskCount }}</b> <span class="n">{{ pct(riskCount) }}</span></span>
+            <span>NG <b>{{ ngCount }}</b> <span class="n">{{ pct(ngCount) }}</span></span>
+          </div>
+          <p class="card-note" style="text-align:center; margin: 10px 0 0">OK 为 A/B 且非 NG；RISK 为 C 且非 NG；NG 为热成像 NG 判定。</p>
+        </el-card>
+      </el-col>
     </el-row>
 
     <el-row class="equal-row" :gutter="20">
@@ -77,18 +89,6 @@
             <div class="info-item"><div class="k">最新建议</div><div class="v"><template v-if="latestSug.id">#{{ latestSug.id }} · 置信度 {{ Math.round(latestSug.confidence * 100) }}% · 缺陷概率 {{ latestSug.defect_probability }}</template><template v-else>暂无</template></div></div>
             <div class="info-item"><div class="k">产线</div><div class="v">模式 {{ systemState.mode }} · {{ systemState.stopped ? '已停止' : '正常' }}</div></div>
           </div>
-        </el-card>
-      </el-col>
-      <el-col :xs="24" :md="10">
-        <el-card>
-          <template #header><div class="panel-head"><span>本班判定分布</span><span class="sub">共 {{ thermals.length }} 台</span></div></template>
-          <div style="display:flex; justify-content:center"><DonutChart :ok="okCount" :risk="riskCount" :ng="ngCount" /></div>
-          <div class="dist-legend">
-            <span>OK <b>{{ okCount }}</b> <span class="n">{{ pct(okCount) }}</span></span>
-            <span>RISK <b>{{ riskCount }}</b> <span class="n">{{ pct(riskCount) }}</span></span>
-            <span>NG <b>{{ ngCount }}</b> <span class="n">{{ pct(ngCount) }}</span></span>
-          </div>
-          <p class="card-note" style="text-align:center; margin: 10px 0 0">OK 为 A/B 且非 NG；RISK 为 C 且非 NG；NG 为热成像 NG 判定。</p>
         </el-card>
       </el-col>
     </el-row>
