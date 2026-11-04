@@ -280,6 +280,7 @@ def list_suggestions(db: Session = Depends(get_db)):
                            "material_temp": s.suggested_material_temp,
                            "core_temp": s.suggested_core_temp,
                            "curing_time": s.suggested_curing_time},
+             "objective_score": s.objective_score,
              "status": s.status}
             for s in db.query(Suggestion).order_by(Suggestion.id.desc()).limit(200)]
 
