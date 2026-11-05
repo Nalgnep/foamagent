@@ -78,6 +78,47 @@ python -m gateway.cli --config gateway/points.json --read-all
 6. 审批检查（`requires_approval` 的点位必须传 `approved=True`）
 7. 单次发送，不重试；失败记 `unknown` 审计
 
+## 打包成 exe（Windows）
+
+网关 CLI 已可打成单个可执行文件，Python、网关代码和
+`s7commplus` 库都打进一个文件里，现场电脑不用装 Python
+也能跑。**注意：PyInstaller 不能跨平台编译**，Windows 的
+`.exe` 必须在 Windows 上打，Linux 上打出来的是 Linux
+可执行文件（已在本机验证过打包流程，见下）。
+
+```bat
+:: 在 Windows 上，到项目根目录双击运行：
+gateway\build_exe.bat
+:: 或 PowerShell：
+.\gateway\build_exe.ps1
+```
+
+脚本会：创建 `.venv-gateway` 虚拟环境 -> 装
+`gateway/requirements.txt` + `gateway/requirements-build.txt`
+（PyInstaller）-> 按 `gateway/s7gateway.spec` 打包 ->
+把可编辑的 `points.json` 复制到 exe 旁边。产物是
+`dist\s7gateway.exe`（约 14 MB），自测命令：
+
+```bat
+dist\s7gateway.exe --mock --read-all
+set S7_HOST=192.168.1.10
+dist\s7gateway.exe --browse
+dist\s7gateway.exe --read-all
+```
+
+点表说明：exe 旁边那份 `dist\points.json` 是可编辑的，
+先改它的 `symbol` 再跑；exe 里还内嵌了一份同名点表做
+兜底，旁边没有点表文件时才用它。密码只走环境变量
+`S7_PASSWORD`，不要写进点表或批处理里。
+
+Linux 验证（2026-11-05）：同 spec 在 Linux 上打出单文件
+`s7gateway`（14 MB），`--mock --read-all / --browse / --poll`
+及写 33.5 成功、写 50 被范围拦截均通过；无 PLC 时连
+127.0.0.1:102 干净报错退出码 1。打包不改动网关逻辑，
+只修了一个现场会遇到的小问题：原来连不上 PLC 时 CLI
+会直接抛 traceback，现在统一打印一行 `error: ...` 再
+退出（网关测试 9 项、主系统冒烟 5 项仍全部通过）。
+
 ## 与主系统的关系
 
 主系统（`backend/`）目前用模拟数据；接线时把网关的读结果

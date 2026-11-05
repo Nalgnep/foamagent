@@ -19,14 +19,37 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 import threading
 import time
+from pathlib import Path
 
-from .client import MockPLCClient, S7CommPlusPLCClient
+from .client import MockPLCClient, PLCError, S7CommPlusPLCClient
 from .config import GatewayConfig, load_points
 from .gateway import AuditLog, Gateway, GatewayError, WriteRejected
 from .types import encode_value
+
+
+def _default_config_path() -> str:
+    """Find points.json in source runs and in the packaged exe.
+
+    Order: ``gateway/points.json`` under the current directory (source
+    checkout) -> ``points.json`` next to the exe (the editable copy the
+    build script places beside it) -> the copy bundled inside the exe
+    (``sys._MEIPASS``) -> ``points.json`` next to this file.
+    """
+    candidates: list[Path] = [Path("gateway/points.json")]
+    if getattr(sys, "frozen", False):
+        candidates.append(Path(sys.executable).resolve().parent / "points.json")
+    meipass = getattr(sys, "_MEIPASS", None)
+    if meipass:
+        candidates.append(Path(meipass) / "points.json")
+    candidates.append(Path(__file__).resolve().parent / "points.json")
+    for cand in candidates:
+        if cand.is_file():
+            return str(cand)
+    return "gateway/points.json"
 
 
 def _mock_client() -> MockPLCClient:
@@ -47,7 +70,7 @@ def _mock_client() -> MockPLCClient:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="S7CommPlus symbolic gateway CLI")
-    parser.add_argument("--config", default="gateway/points.json")
+    parser.add_argument("--config", default=_default_config_path())
     parser.add_argument("--mock", action="store_true", help="use the in-memory mock PLC")
     parser.add_argument("--read-all", action="store_true")
     parser.add_argument("--read", nargs="*", default=[])
@@ -97,7 +120,7 @@ def main(argv: list[str] | None = None) -> int:
                 print(json.dumps(gateway.poll_once(), ensure_ascii=False, default=str))
                 time.sleep(config.poll_interval_s)
             stop.set()
-    except (GatewayError, WriteRejected) as exc:
+    except (GatewayError, WriteRejected, PLCError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
     finally:
