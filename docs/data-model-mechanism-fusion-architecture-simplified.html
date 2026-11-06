@@ -1,0 +1,550 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>数据模型与机理模型融合架构图（简化版）</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&family=Noto+Serif+SC:wght@700;900&display=swap" rel="stylesheet" />
+    <style>
+      :root{
+        --bg:#eef1f2;
+        --paper:#ffffff;
+        --ink:#17262e;
+        --muted:#5d707a;
+        --line:#b9c6cb;
+        --line-strong:#7e939d;
+        --teal:#0e7569;
+        --teal-tint:#e3f2ef;
+        --teal-line:#8fc6bc;
+        --amber:#a35c07;
+        --amber-tint:#fbf0dc;
+        --amber-line:#e2bd83;
+        --slate:#1d3947;
+        --slate-ink:#f2f7f8;
+        --slate-sub:#b9cdd4;
+        --red:#b03327;
+        --red-tint:#fbeae7;
+        --red-line:#e0a79f;
+        --green:#1c7a3f;
+        --green-tint:#e6f4ea;
+        --green-line:#9fd0ab;
+        --chip:#eef3f4;
+        --shadow:0 1px 2px rgba(23,38,46,.06),0 10px 28px -18px rgba(23,38,46,.28);
+      }
+      @media (prefers-color-scheme: dark){
+        :root{
+          --bg:#0d1519;
+          --paper:#162228;
+          --ink:#e8f0f2;
+          --muted:#9db2ba;
+          --line:#38525c;
+          --line-strong:#5f7d88;
+          --teal:#3ec2b1;
+          --teal-tint:#12332f;
+          --teal-line:#2c5f58;
+          --amber:#e5a44a;
+          --amber-tint:#38280f;
+          --amber-line:#6d5222;
+          --slate:#274b5c;
+          --slate-ink:#f2f7f8;
+          --slate-sub:#b9cdd4;
+          --red:#ef8a7d;
+          --red-tint:#3a1e1a;
+          --red-line:#71413a;
+          --green:#63c984;
+          --green-tint:#153324;
+          --green-line:#2f5c3d;
+          --chip:#1e3038;
+          --shadow:0 1px 2px rgba(0,0,0,.3),0 12px 30px -18px rgba(0,0,0,.6);
+        }
+      }
+      *{box-sizing:border-box}
+      html,body{margin:0;padding:0}
+      body{
+        background:var(--bg);
+        color:var(--ink);
+        font-family:"Noto Sans SC",-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;
+        -webkit-font-smoothing:antialiased;
+        padding:28px 18px 40px;
+      }
+      .wrap{max-width:1340px;margin:0 auto}
+
+      /* ---------- header ---------- */
+      header.top{
+        display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;
+        margin-bottom:18px;
+      }
+      h1{
+        font-family:"Noto Serif SC",serif;font-weight:900;
+        font-size:clamp(24px,4.4vw,36px);line-height:1.25;margin:0;letter-spacing:.01em;
+      }
+      h1 .x{color:var(--teal);font-family:"Noto Sans SC",sans-serif;font-weight:500;padding:0 .08em}
+      .subtitle{margin:8px 0 0;color:var(--muted);font-size:15px;line-height:1.6}
+      .subtitle b{color:var(--ink);font-weight:700}
+      .subtitle .t{color:var(--teal);font-weight:700}
+      .subtitle .a{color:var(--amber);font-weight:700}
+      .actions{display:flex;gap:8px;flex-shrink:0}
+      .actions button{
+        font:inherit;font-size:13.5px;font-weight:700;cursor:pointer;
+        border:1px solid var(--line-strong);background:var(--paper);color:var(--ink);
+        border-radius:8px;padding:9px 16px;display:inline-flex;align-items:center;gap:7px;
+      }
+      .actions button:hover{border-color:var(--ink)}
+      .actions button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+      .actions button svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+      /* ---------- figure ---------- */
+      figure.diagram{
+        margin:0;background:var(--paper);border:1px solid var(--line);
+        border-radius:14px;box-shadow:var(--shadow);
+        padding:clamp(18px,2.6vw,32px) clamp(14px,2.4vw,30px) 22px;
+      }
+
+      /* horizontal flow: input → models → fusion → gate → outcomes */
+      .flow-h{
+        display:grid;
+        grid-template-columns:168px 36px minmax(0,1.3fr) 36px minmax(0,1.05fr) 28px minmax(0,0.95fr) 36px minmax(0,1fr);
+        align-items:stretch;
+      }
+      .models-col{display:grid;grid-template-rows:1fr 1fr;gap:16px;min-width:0}
+      .outcomes-col{display:grid;grid-template-rows:1fr 1fr;gap:16px;min-width:0}
+
+      .step-tag{
+        display:inline-flex;align-items:center;gap:7px;
+        font-size:11.5px;font-weight:700;letter-spacing:.06em;color:var(--muted);
+      }
+      .step-tag .num{
+        width:20px;height:20px;border-radius:50%;flex:none;
+        background:var(--ink);color:var(--paper);
+        display:inline-flex;align-items:center;justify-content:center;
+        font-size:12px;font-weight:900;letter-spacing:0;
+      }
+
+      /* generic node */
+      .node{
+        border:1.5px solid var(--line);border-radius:12px;background:var(--paper);
+        padding:14px 15px;position:relative;min-width:0;
+        transition:border-color .25s ease, box-shadow .25s ease, opacity .25s ease;
+      }
+      .node h3{margin:7px 0 0;font-size:16.5px;font-weight:900;line-height:1.35}
+      .node .role{margin:5px 0 0;font-size:13px;color:var(--muted);line-height:1.55}
+      .node .role b{color:var(--ink)}
+
+      /* input node (far left) */
+      .node.input{text-align:center;border-color:var(--line-strong);display:flex;flex-direction:column;justify-content:center}
+      .node.input .step-tag{justify-content:center}
+      .chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:12px}
+      .chip{
+        background:var(--chip);border-radius:999px;padding:4px 10px;
+        font-size:12.5px;font-weight:500;line-height:1.4;white-space:nowrap;
+      }
+      .node.input .foot{margin:11px 0 0;font-size:11.5px;color:var(--muted);line-height:1.6}
+
+      /* model nodes (stacked, fed in parallel) */
+      .node.model{padding:14px 15px 13px;display:flex;flex-direction:column;justify-content:center}
+      .node.model.data{border-color:var(--teal-line);background:linear-gradient(180deg,var(--teal-tint),var(--paper) 62%)}
+      .node.model.mech{border-color:var(--amber-line);background:linear-gradient(180deg,var(--amber-tint),var(--paper) 62%)}
+      .model-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+      .badge{
+        flex:none;font-size:11.5px;font-weight:900;border-radius:6px;padding:3px 8px;line-height:1.3;
+      }
+      .data .badge{background:var(--teal);color:#fff}
+      .mech .badge{background:var(--amber);color:#fff}
+      @media (prefers-color-scheme: dark){ .data .badge,.mech .badge{color:#10181b} }
+      .out-label{margin:11px 0 6px;font-size:11.5px;font-weight:700;letter-spacing:.08em;color:var(--muted)}
+      ul.outs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
+      ul.outs li{
+        display:flex;gap:8px;align-items:baseline;font-size:13px;line-height:1.5;font-weight:500;
+      }
+      ul.outs li svg{width:13px;height:13px;flex:none;position:relative;top:2px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+      .data ul.outs li svg{color:var(--teal)}
+      .mech ul.outs li svg{color:var(--amber)}
+      ul.outs li span.dim{color:var(--muted);font-weight:400;font-size:12.5px}
+      ul.outs li b{font-weight:900}
+      .data ul.outs li b{color:var(--teal)}
+      .mech ul.outs li b{color:var(--amber)}
+
+      /* fusion node */
+      .node.fusion{
+        text-align:center;display:flex;flex-direction:column;justify-content:center;
+        background:var(--slate);border-color:var(--slate);color:var(--slate-ink);
+      }
+      .node.fusion .step-tag{color:var(--slate-sub);justify-content:center}
+      .node.fusion .step-tag .num{background:var(--slate-ink);color:var(--slate)}
+      .node.fusion h3{color:var(--slate-ink)}
+      .node.fusion .role{color:var(--slate-sub)}
+      .node.fusion .role b{color:var(--slate-ink)}
+      .example{
+        margin:12px auto 2px;display:inline-block;max-width:100%;
+        border:1px dashed rgba(255,255,255,.38);border-radius:9px;
+        padding:7px 11px;font-size:12.5px;line-height:1.65;color:var(--slate-ink);
+      }
+      .example .from{color:var(--slate-sub)}
+      .example b{font-weight:900}
+
+      /* gate node */
+      .node.gate{text-align:center;border-color:var(--line-strong);border-width:1.5px;display:flex;flex-direction:column;justify-content:center}
+      .node.gate .step-tag{justify-content:center}
+      .gate-rules{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:11px}
+      .gate-rules span{
+        border:1px solid var(--red-line);background:var(--red-tint);color:var(--red);
+        border-radius:999px;padding:3px 9px;font-size:12px;font-weight:700;line-height:1.4;white-space:nowrap;
+      }
+      .gate-rules span.ok{border-color:var(--line);background:var(--chip);color:var(--muted)}
+
+      /* outcome nodes (far right, stacked) */
+      .node.stop{border:1.5px dashed var(--red-line);background:var(--red-tint);display:flex;flex-direction:column;justify-content:center}
+      .node.go{border-color:var(--green-line);background:var(--green-tint);display:flex;flex-direction:column;justify-content:center}
+      .outcome-head{display:flex;align-items:center;gap:9px}
+      .outcome-head .ic{
+        width:28px;height:28px;border-radius:50%;flex:none;
+        display:flex;align-items:center;justify-content:center;
+      }
+      .outcome-head .ic svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+      .stop .outcome-head .ic{background:var(--red)}
+      .go .outcome-head .ic{background:var(--green)}
+      @media (prefers-color-scheme: dark){ .outcome-head .ic svg{stroke:#10181b} }
+      .outcome-head h3{margin:0;font-size:15.5px}
+      .stop h3{color:var(--red)} .go h3{color:var(--green)}
+      .node.stop .role,.node.go .role{margin-top:7px}
+
+      /* horizontal connectors (inline SVG) */
+      .conn-h-wrap{min-width:0}
+      .conn-h{display:block;width:100%;height:100%}
+      .conn-h path{stroke:var(--line-strong);stroke-width:2;fill:none}
+      .conn-h .dash{stroke-dasharray:5 5}
+      .conn-h polygon{fill:var(--line-strong)}
+      .conn-h-arrow{display:flex;align-items:center;min-width:0}
+      .conn-h-arrow svg{display:block;width:100%;height:20px}
+      .conn-h-arrow path{stroke:var(--line-strong);stroke-width:2;fill:none}
+      .conn-h-arrow polygon{fill:var(--line-strong)}
+
+      /* vertical connectors: only used when the flow stacks on narrow screens */
+      .conn-v{display:none;width:100%;height:34px}
+      .conn-v path{stroke:var(--line-strong);stroke-width:2;fill:none}
+      .conn-v polygon{fill:var(--line-strong)}
+
+      /* loop bar */
+      .loopbar{
+        margin-top:22px;border:1.5px dashed var(--line-strong);border-radius:12px;
+        padding:13px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+        font-size:14.5px;line-height:1.6;
+      }
+      .loopbar .ic{width:30px;height:30px;border-radius:50%;background:var(--ink);flex:none;display:flex;align-items:center;justify-content:center}
+      .loopbar .ic svg{width:16px;height:16px;stroke:var(--paper);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+      .loopbar b{font-weight:900}
+      .loopbar span{color:var(--muted)}
+      .loopbar .back{margin-left:auto;font-weight:700;color:var(--ink);white-space:nowrap;font-size:13.5px}
+
+      /* edge timing strip */
+      .timing{
+        margin-top:18px;display:flex;flex-wrap:wrap;gap:8px 22px;justify-content:center;
+        font-size:13px;color:var(--muted);line-height:1.6;text-align:center;
+      }
+      .timing b{color:var(--ink);font-weight:900}
+
+      .status-note{
+        margin:14px auto 0;max-width:860px;text-align:center;
+        font-size:12.5px;line-height:1.7;color:var(--muted);
+        border-top:1px dashed var(--line);padding-top:12px;
+      }
+      .status-note b{color:var(--ink);font-weight:900}
+
+      figcaption{
+        margin-top:16px;padding-top:14px;border-top:1px solid var(--line);
+        display:flex;flex-wrap:wrap;gap:8px 26px;font-size:12.5px;color:var(--muted);line-height:1.6;
+      }
+      figcaption .key{display:inline-flex;align-items:center;gap:8px}
+      .swatch{width:26px;height:0;border-top:2.5px solid var(--line-strong);display:inline-block;position:relative}
+      .swatch::after{content:"";position:absolute;right:-1px;top:-4.5px;border:3.5px solid transparent;border-left:6px solid var(--line-strong)}
+      .swatch.dash{border-top-style:dashed;border-top-color:var(--red-line)}
+      .swatch.dash::after{border-left-color:var(--red-line)}
+      .swatch.loop{border-top-style:dashed}
+      .swatch.loop::after{border-left-color:var(--line-strong)}
+
+      /* playback highlight */
+      body.playing .node{opacity:.38}
+      body.playing .node.lit{opacity:1;border-color:var(--ink);box-shadow:0 0 0 3px var(--teal-tint),var(--shadow)}
+      body.playing .loopbar{opacity:.38}
+      body.playing .loopbar.lit{opacity:1}
+
+      /* narrow screens: stack top-to-bottom instead of sideways scrolling */
+      @media (max-width:1120px){
+        .flow-h{display:flex;flex-direction:column;align-items:stretch}
+        .conn-h-wrap,.conn-h-arrow{display:none}
+        .conn-v{display:block}
+        .models-col,.outcomes-col{display:flex;flex-direction:column;gap:14px}
+        .node{padding:16px 18px}
+        .node h3{font-size:17.5px}
+        .node .role{font-size:14px}
+        ul.outs li{font-size:14.5px}
+        ul.outs li span.dim{font-size:13.5px}
+        .chip{font-size:13.5px;padding:5px 12px}
+        .node.input .foot{font-size:12.5px}
+        .example{font-size:13.5px}
+        .gate-rules span{font-size:13px;padding:4px 11px}
+        .outcome-head h3{font-size:17.5px}
+      }
+      @media (max-width:680px){
+        body{padding:20px 10px 32px}
+        .loopbar .back{margin-left:0}
+        header.top{align-items:flex-start;flex-direction:column}
+      }
+      @media print{
+        body{background:#fff;padding:0}
+        .actions{display:none}
+        figure.diagram{box-shadow:none;border:none;padding:8px}
+      }
+      @media (prefers-reduced-motion: reduce){
+        .node{transition:none}
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="top">
+        <div>
+          <h1>数据模型 <span class="x">×</span> 机理模型 · 融合架构</h1>
+          <p class="subtitle">发泡工艺智能体 · 边缘融合（简化版）· 数据从左往右流 —— <b>一句话：</b><span class="a">机理划红线</span>，<span class="t">数据找最优</span>，<b>人来放行</b>。</p>
+        </div>
+        <div class="actions">
+          <button type="button" id="playBtn">
+            <svg viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3" fill="currentColor" stroke="none"/></svg>
+            播放流程
+          </button>
+        </div>
+      </header>
+
+      <figure class="diagram" aria-label="数据模型与机理模型融合流程架构图，数据从左往右流动">
+        <div class="flow-h">
+
+          <!-- 1 输入（最左） -->
+          <section class="node input" data-step="1">
+            <span class="step-tag"><span class="num">1</span>输入 · 每箱一份</span>
+            <h3>实时工艺参数</h3>
+            <div class="chips">
+              <span class="chip">料比</span>
+              <span class="chip">料温</span>
+              <span class="chip">注料重量 / 压力</span>
+              <span class="chip">模芯 / 夹具温度</span>
+              <span class="chip">固化时间</span>
+              <span class="chip">环境温湿度</span>
+            </div>
+            <p class="foot">同一份输入喂给两个模型 · 附带热成像结果与料性 / 模具配置 · 按箱体条码对齐</p>
+          </section>
+
+          <svg class="conn-v" viewBox="0 0 100 34" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M50 0 V24" vector-effect="non-scaling-stroke"/>
+            <polygon points="50,34 46.5,24 53.5,24"/>
+          </svg>
+
+          <!-- fork: one input splits right into the two models -->
+          <div class="conn-h-wrap" aria-hidden="true">
+            <svg class="conn-h" viewBox="0 0 36 100" preserveAspectRatio="none">
+              <path d="M0 50 H10 V25 H26" vector-effect="non-scaling-stroke"/>
+              <path d="M10 50 V75 H26" vector-effect="non-scaling-stroke"/>
+              <polygon points="36,25 26,21.5 26,28.5"/>
+              <polygon points="36,75 26,71.5 26,78.5"/>
+            </svg>
+          </div>
+
+          <!-- 2 双模型（上下并行） -->
+          <div class="models-col">
+            <section class="node model data" data-step="2">
+              <div class="model-head">
+                <span class="step-tag"><span class="num">2</span>并行计算</span>
+                <span class="badge">持建议权</span>
+              </div>
+              <h3>数据模型 · LightGBM</h3>
+              <p class="role">管<b>「好不好」</b>——像老师傅，凭历史经验判这一箱会不会坏。</p>
+              <p class="out-label">输出</p>
+              <ul class="outs">
+                <li><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span><b>缺陷概率</b> <span class="dim">≥ 0.50 判 NG</span></span></li>
+                <li><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span><b>置信度</b> <span class="dim">这句话有几分可信</span></span></li>
+                <li><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span><b>建议参数</b> <span class="dim">想调到哪最划算</span></span></li>
+              </ul>
+            </section>
+
+            <section class="node model mech" data-step="2">
+              <div class="model-head">
+                <span class="step-tag"><span class="num">2</span>并行计算</span>
+                <span class="badge">持否决权</span>
+              </div>
+              <h3>机理模型 · 降阶孪生</h3>
+              <p class="role">管<b>「能不能」</b>——按反应—传热—固化物理规律，划不能碰的红线。</p>
+              <p class="out-label">输出</p>
+              <ul class="outs">
+                <li><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span><b>过程状态</b> <span class="dim">固化度 / 温度趋势</span></span></li>
+                <li><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span><b>可行域</b> <span class="dim">料比 1.00–1.15 · 模芯 35–55℃ …</span></span></li>
+                <li><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span><b>调整约束</b> <span class="dim">能动多少 / 步长上限</span></span></li>
+              </ul>
+            </section>
+          </div>
+
+          <svg class="conn-v" viewBox="0 0 100 34" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M50 0 V24" vector-effect="non-scaling-stroke"/>
+            <polygon points="50,34 46.5,24 53.5,24"/>
+          </svg>
+
+          <!-- join: both models merge right into fusion -->
+          <div class="conn-h-wrap" aria-hidden="true">
+            <svg class="conn-h" viewBox="0 0 36 100" preserveAspectRatio="none">
+              <path d="M0 25 H26 V50" vector-effect="non-scaling-stroke"/>
+              <path d="M0 75 H26 V50" vector-effect="non-scaling-stroke"/>
+              <polygon points="36,50 26,46.5 26,53.5"/>
+            </svg>
+          </div>
+
+          <!-- 3 融合 -->
+          <section class="node fusion" data-step="3">
+            <span class="step-tag"><span class="num">3</span>融合决策</span>
+            <h3>融合优化</h3>
+            <p class="role">在<b>机理可行域内</b>，用数据模型搜<b>缺陷概率最低</b>的参数——建议必须先过机理这一关。</p>
+            <div class="example">
+              <span class="from">例：料比 1.10 · 料温 19℃ · 模芯 38℃ · 固化 300s（缺陷概率 0.8155）→</span><br />
+              建议 <b>1.0875 / 21.0℃ / 41.5℃ / 345s</b>
+            </div>
+          </section>
+
+          <svg class="conn-v" viewBox="0 0 100 34" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M50 0 V24" vector-effect="non-scaling-stroke"/>
+            <polygon points="50,34 46.5,24 53.5,24"/>
+          </svg>
+
+          <!-- arrow: fusion → gate -->
+          <div class="conn-h-arrow" aria-hidden="true">
+            <svg viewBox="0 0 28 20" preserveAspectRatio="none">
+              <path d="M0 10 H18" vector-effect="non-scaling-stroke"/>
+              <polygon points="28,10 18,5 18,15"/>
+            </svg>
+          </div>
+
+          <!-- 4 校验 -->
+          <section class="node gate" data-step="4">
+            <span class="step-tag"><span class="num">4</span>把关 · 任何一条触发都不自动下发</span>
+            <h3>安全校验 + 人工确认</h3>
+            <div class="gate-rules">
+              <span>两模型结论冲突</span>
+              <span>置信度 &lt; 0.70</span>
+              <span>超出数据分布</span>
+              <span>机理判不可行</span>
+              <span class="ok">8 项安全校验</span>
+            </div>
+          </section>
+
+          <svg class="conn-v" viewBox="0 0 100 34" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M50 0 V24" vector-effect="non-scaling-stroke"/>
+            <polygon points="50,34 46.5,24 53.5,24"/>
+          </svg>
+
+          <!-- branch: gate splits right into the two outcomes -->
+          <div class="conn-h-wrap" aria-hidden="true">
+            <svg class="conn-h" viewBox="0 0 36 100" preserveAspectRatio="none">
+              <path class="dash" d="M0 50 H10 V25 H26" vector-effect="non-scaling-stroke"/>
+              <path d="M10 50 V75 H26" vector-effect="non-scaling-stroke"/>
+              <polygon points="36,25 26,21.5 26,28.5"/>
+              <polygon points="36,75 26,71.5 26,78.5"/>
+            </svg>
+          </div>
+
+          <!-- 5 结果（最右，上下两路） -->
+          <div class="outcomes-col">
+            <section class="node stop" data-step="5">
+              <div class="outcome-head">
+                <span class="ic"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></span>
+                <h3>不通过 → 转人工</h3>
+              </div>
+              <p class="role">只出风险提示，<b>不下发</b>；由人工 / LLM 辅助复核，全程留痕。</p>
+            </section>
+            <section class="node go" data-step="5">
+              <div class="outcome-head">
+                <span class="ic"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span>
+                <h3>通过并确认 → 受控下发</h3>
+              </div>
+              <p class="role">参数写入产线并<b>回读验证</b>，异常可回滚到安全基线 1.08 / 22℃ / 45℃ / 360s。</p>
+            </section>
+          </div>
+        </div>
+
+        <!-- 闭环 -->
+        <div class="loopbar" data-step="6">
+          <span class="ic"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg></span>
+          <div><b>闭环回流：</b><span>下发效果 + 下一箱实测 → 验证建议是否有效 → 回流更新两个模型</span></div>
+          <span class="back">← 回到 ① · 下一箱</span>
+        </div>
+
+        <div class="timing">
+          <span><b>边缘侧运行</b>，断网可跑</span>
+          <span>机理在固化 180–600s 过程里<b>边算边更新</b></span>
+          <span>检测点只做最后融合</span>
+          <span>节拍 <b>15s / 箱</b> · 出结果 <b>≤ 3s</b></span>
+        </div>
+
+        <p class="status-note"><b>现状说明：</b>本图画的是设计目标架构。现阶段正式系统里，数据模型仍为规则占位（LightGBM 槽位已注册、尚未接入），机理侧为约束框架（只判在不在框内、违反哪条），固化度等过程状态输出尚待实现，并需 ≥100 组数据验证后才算落地。</p>
+
+        <figcaption>
+          <span class="key"><span class="swatch"></span>主流程（从左往右）</span>
+          <span class="key"><span class="swatch dash"></span>异常分支（不下发）</span>
+          <span class="key"><span class="swatch loop"></span>虚线框 = 兜底 / 回流环节</span>
+          <span>边界：机理不能替数据做精细预测，数据不能推翻机理越界下发。</span>
+        </figcaption>
+      </figure>
+    </div>
+
+    <script>
+      (function () {
+        var playBtn = document.getElementById('playBtn');
+        var timers = [];
+        var playing = false;
+
+        function clearTimers() {
+          timers.forEach(function (t) { clearTimeout(t); });
+          timers = [];
+        }
+        function stopPlay() {
+          clearTimers();
+          playing = false;
+          document.body.classList.remove('playing');
+          document.querySelectorAll('.lit').forEach(function (el) { el.classList.remove('lit'); });
+          playBtn.lastChild.textContent = ' 播放流程';
+        }
+        playBtn.addEventListener('click', function () {
+          if (playing) { stopPlay(); return; }
+          var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          var groups = {};
+          document.querySelectorAll('[data-step]').forEach(function (el) {
+            var s = el.getAttribute('data-step');
+            (groups[s] = groups[s] || []).push(el);
+          });
+          var steps = Object.keys(groups).sort();
+          if (reduce) {
+            steps.forEach(function (s) { groups[s].forEach(function (el) { el.classList.add('lit'); }); });
+            document.body.classList.add('playing');
+            timers.push(setTimeout(stopPlay, 2600));
+            playing = true;
+            playBtn.lastChild.textContent = ' 停止';
+            return;
+          }
+          playing = true;
+          playBtn.lastChild.textContent = ' 停止';
+          document.body.classList.add('playing');
+          steps.forEach(function (s, i) {
+            timers.push(setTimeout(function () {
+              document.querySelectorAll('.lit').forEach(function (el) { el.classList.remove('lit'); });
+              groups[s].forEach(function (el) { el.classList.add('lit'); });
+              var first = groups[s][0];
+              if (first && first.scrollIntoView) {
+                try { first.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {}
+              }
+            }, i * 950));
+          });
+          timers.push(setTimeout(stopPlay, steps.length * 950 + 700));
+        });
+      })();
+    </script>
+  </body>
+</html>

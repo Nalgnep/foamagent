@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="color-scheme" content="light dark"/>
+<link rel="icon" href="data:,"/>
+<title>数据模型与机理模型融合架构图</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&family=Noto+Serif+SC:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f6f4; --surface:#ffffff; --surface2:#eef1ee; --ink:#16211d; --muted:#5f6f68; --line:#dde3de;
+  --teal:#0f766e; --teal-bg:#e6f3f0; --teal-line:#bfe0d9; --amber:#b45309; --amber-bg:#fef3e2; --amber-line:#f3d9ae;
+  --dark:#182723; --dark2:#22332e; --red:#b42318; --red-bg:#fef0ef; --green:#067647; --green-bg:#ecfdf3;
+  --gold:#e9a23b;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#111714; --surface:#1a221e; --surface2:#222c27; --ink:#e8efeb; --muted:#9fb0a7; --line:#2e3b35;
+  --teal:#2dd4bf; --teal-bg:#14302c; --teal-line:#1f4a44; --amber:#fbbf24; --amber-bg:#33270f; --amber-line:#57451a;
+  --dark:#0d1512; --dark2:#16211d; --red:#fda29b; --red-bg:#3a1a17; --green:#6ce9a6; --green-bg:#0f2e1e; }
+}
+*{box-sizing:border-box} html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans SC",system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.6}
+a{color:var(--teal)}
+.wrap{max-width:1140px;margin:0 auto;padding:28px 20px 56px}
+.top{padding:28px 0 8px}
+.kicker{font-size:12px;letter-spacing:.18em;font-weight:700;color:var(--teal);text-transform:uppercase}
+h1{font-family:"Noto Serif SC",serif;font-size:clamp(28px,5vw,46px);line-height:1.15;margin:10px 0 12px;font-weight:900;letter-spacing:.01em}
+.lede{font-size:clamp(15px,2vw,18px);color:var(--muted);max-width:760px;margin:0}
+.mantra{display:flex;flex-wrap:wrap;gap:10px;margin:22px 0 6px}
+.mantra span{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:8px 14px;font-size:13.5px;font-weight:700}
+.mantra b{color:var(--teal)} .mantra span:nth-child(2) b{color:var(--amber)}
+/* diagram */
+.diagram{margin-top:26px}
+.stage{display:flex;align-items:center;gap:12px;margin:26px 0 12px}
+.stage i{font-style:normal;width:28px;height:28px;border-radius:50%;background:var(--dark);color:#fff;display:grid;place-items:center;font-size:13px;font-weight:800;flex:none}
+@media (prefers-color-scheme: dark){.stage i{background:#e8efeb;color:#16211d}}
+.stage h2{font-size:16px;margin:0;letter-spacing:.02em}
+.stage p{margin:0;color:var(--muted);font-size:13px}
+.stage .rule{flex:1;height:1px;background:var(--line)}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 18px 16px}
+.card h3{margin:0 0 6px;font-size:15px}
+.card p{margin:0;color:var(--muted);font-size:13.5px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.chips span{font-size:12px;background:var(--surface2);border-radius:999px;padding:4px 9px;font-weight:600}
+.note{margin-top:12px;font-size:12.5px;padding:9px 11px;border-radius:10px;background:var(--surface2);color:var(--muted)}
+.note b{color:var(--ink)}
+.arrow{display:flex;justify-content:center;padding:6px 0 0;color:var(--muted)}
+.arrow svg{display:block}
+/* model cards */
+.model{border-radius:18px;padding:20px;position:relative;overflow:hidden}
+.model-teal{background:var(--teal-bg);border:1px solid var(--teal-line)}
+.model-amber{background:var(--amber-bg);border:1px solid var(--amber-line)}
+.model .role{font-size:12px;font-weight:800;letter-spacing:.14em}
+.model-teal .role{color:var(--teal)} .model-amber .role{color:var(--amber)}
+.model h3{font-size:21px;margin:6px 0 2px}
+.model .sub{color:var(--muted);font-size:13.5px;margin:0 0 14px}
+.outlabel{font-size:11px;letter-spacing:.12em;font-weight:800;opacity:.7;margin:14px 0 8px}
+.out{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.out li{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:13.5px}
+.out li b{display:block;font-size:13.5px}
+.out li span{color:var(--muted);font-size:12.5px}
+.domain{margin-top:14px;background:var(--surface);border:1px dashed var(--teal-line);border-radius:12px;padding:12px}
+.domain table{width:100%;border-collapse:collapse;font-size:12.5px}
+.domain td{padding:3px 0;color:var(--muted)} .domain td:last-child{text-align:right;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.pros{margin-top:12px;font-size:12.5px;color:var(--muted);display:grid;gap:4px}
+.bridge{margin:14px 0 0;border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:14px 16px;display:flex;gap:14px;align-items:flex-start}
+.bridge .badge{flex:none;background:var(--dark);color:#fff;font-size:11px;font-weight:800;letter-spacing:.08em;padding:5px 9px;border-radius:999px}
+@media (prefers-color-scheme: dark){.bridge .badge{background:#e8efeb;color:#16211d}}
+.bridge p{margin:0;font-size:13.5px;color:var(--muted)} .bridge p b{color:var(--ink)}
+/* fusion */
+.fusion{background:var(--dark);color:#eef4f1;border-radius:18px;padding:22px}
+.fusion h3{margin:0;font-size:19px;color:#fff}
+.fusion .sub{color:#a9bcb3;font-size:13.5px;margin:4px 0 18px}
+.gates{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.gate{background:var(--dark2);border:1px solid #31443c;border-radius:14px;padding:16px}
+.gate .n{font-size:11px;letter-spacing:.14em;font-weight:800;color:var(--gold)}
+.gate h4{margin:6px 0 6px;font-size:15px;color:#fff}
+.gate p{margin:0;font-size:13px;color:#b9c9c1}
+.gate.redgate .n{color:#fda29b}
+.opt{margin-top:12px;border:1px solid #31443c;border-radius:14px;padding:14px 16px;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;background:rgba(255,255,255,.03)}
+.opt b{color:#fff;font-size:14px}.opt span{font-size:13px;color:#b9c9c1}
+/* outcomes */
+.outcome{border-radius:16px;padding:18px;border:1px solid var(--line);background:var(--surface)}
+.outcome .tag{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.08em;padding:4px 8px;border-radius:999px;margin-bottom:8px}
+.ok .tag{background:var(--green-bg);color:var(--green)} .warn .tag{background:var(--amber-bg);color:var(--amber)} .stop .tag{background:var(--red-bg);color:var(--red)}
+.outcome h3{margin:0 0 6px;font-size:15px}.outcome p{margin:0;font-size:13.5px;color:var(--muted)}
+.degrade{margin-top:14px;font-size:13px;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--gold);border-radius:12px;padding:13px 15px}
+.degrade b{color:var(--ink)}
+/* example */
+.example{margin-top:34px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px}
+.example h2,.section h2{font-size:20px;margin:0 0 6px}
+.example>p,.section>p{color:var(--muted);font-size:14px;margin:0 0 16px}
+.inputbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.inputbar span{background:var(--surface2);border-radius:10px;padding:8px 11px;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
+.inputbar span small{display:block;font-weight:400;color:var(--muted);font-size:11px}
+.vs{display:grid;grid-template-columns:1fr auto 1fr;gap:14px;align-items:stretch}
+.vsbox{border-radius:14px;padding:16px}
+.vsbox h4{margin:0 0 8px;font-size:14px}
+.vsbox .big{font-size:26px;font-weight:900;line-height:1.2}
+.vsbox p{margin:6px 0 0;font-size:13px;color:var(--muted)}
+.vsmid{display:grid;place-items:center;font-weight:900;color:var(--muted);font-size:13px}
+.result{margin-top:14px;background:var(--dark);color:#dbe7e1;border-radius:14px;padding:15px 17px;font-size:14px}
+.result b{color:#fff}
+/* sections */
+.section{margin-top:36px}
+.rules{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.rulecard{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px}
+.rulecard .num{font-family:"Noto Serif SC",serif;font-size:28px;font-weight:900;color:var(--teal)}
+.rulecard h3{margin:4px 0 6px;font-size:15px}.rulecard p{margin:0;font-size:13.5px;color:var(--muted)}
+/* table */
+.tablewrap{overflow:hidden;border:1px solid var(--line);border-radius:16px;background:var(--surface)}
+table.cmp{width:100%;border-collapse:collapse;font-size:13.5px}
+table.cmp th,table.cmp td{padding:12px 14px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line)}
+table.cmp th{background:var(--surface2);font-size:12px;letter-spacing:.06em}
+table.cmp td:first-child{font-weight:700;white-space:nowrap}
+.scroll{overflow-x:auto}
+/* scenarios */
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.tabs button{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:9px 15px;font:inherit;font-size:13.5px;font-weight:700;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--dark);color:#fff;border-color:var(--dark)}
+@media (prefers-color-scheme: dark){.tabs button[aria-selected="true"]{background:#e8efeb;color:#16211d}}
+.scenario{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px}
+.scenario h3{margin:0 0 8px;font-size:16px}
+.scenario p{margin:0 0 10px;font-size:14px;color:var(--muted)}
+.scenario .verdict{font-size:14px;font-weight:700;padding:11px 13px;border-radius:11px}
+.v-ok{background:var(--green-bg);color:var(--green)} .v-stop{background:var(--red-bg);color:var(--red)} .v-warn{background:var(--amber-bg);color:var(--amber)}
+/* stats strip */
+.strip{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px}
+.stat .v{font-size:22px;font-weight:900;font-variant-numeric:tabular-nums}
+.stat .l{font-size:12.5px;color:var(--muted);margin-top:2px}
+.foot{margin-top:30px;border-top:1px solid var(--line);padding-top:18px;color:var(--muted);font-size:13px}
+.foot b{color:var(--ink)}
+@media(max-width:820px){
+  .grid3,.grid2,.gates,.rules,.strip{grid-template-columns:1fr}
+  .vs{grid-template-columns:1fr}.vsmid{padding:2px 0}
+  .wrap{padding:18px 14px 44px}
+  .scroll{overflow:visible}
+  table.cmp thead{display:none}
+  table.cmp,table.cmp tbody,table.cmp tr,table.cmp td{display:block;width:100%}
+  table.cmp tr{padding:10px 14px;border-bottom:1px solid var(--line)}
+  table.cmp td{border-bottom:none;padding:3px 0;white-space:normal}
+  table.cmp td:first-child{color:var(--teal);font-size:12px;letter-spacing:.06em}
+  table.cmp td:nth-child(2)::before{content:"数据模型：";font-weight:700}
+  table.cmp td:nth-child(3)::before{content:"机理模型：";font-weight:700}
+  table.cmp td[colspan]::before{content:""!important}
+}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="kicker">成都 B 线 · 发泡工艺智能体 · 边缘融合</div>
+    <h1>数据模型与机理模型<br>融合架构图</h1>
+    <p class="lede">同一批实时工艺参数，喂给两个模型：一个凭经验判断结果，一个按物理判断过程。在边缘侧先把关、再建议、最后由人放行。</p>
+    <div class="mantra">
+      <span><b>机理是裁判</b> · 管「能不能」</span>
+      <span><b>数据是参谋</b> · 管「好不好」</span>
+      <span><b>人来放行</b> · 冲突不自动下发</span>
+    </div>
+  </header>
+
+  <main class="diagram" aria-label="融合业务流程架构图">
+
+    <!-- 1 INPUT -->
+    <div class="stage"><i>1</i><div><h2>输入层 · 边缘采集</h2><p>按箱体条码 + 时间戳对齐，缺失即标「不适用」</p></div><div class="rule"></div></div>
+    <div class="grid3">
+      <article class="card">
+        <h3>实时工艺参数 — 每箱必接</h3>
+        <p>经 PLC / S7 网关或 IoT 平台进入边缘，是两个模型共同的「眼睛」。</p>
+        <div class="chips"><span>料比</span><span>料温</span><span>注料重量 / 压力</span><span>模芯温度</span><span>夹具温度</span><span>环境温湿度</span><span>发泡 / 固化时间</span></div>
+        <div class="note"><b>关键：要过程轨迹，不要单个终值。</b>模温在固化 300 秒里是稳住还是中途掉 3℃，算出的固化度完全不同。</div>
+      </article>
+      <article class="card">
+        <h3>静态配置 — 研发端下发</h3>
+        <p>不常变的参数存在边缘，换产品、换料时换一版，机理靠它重算可行域。</p>
+        <div class="chips"><span>反应动力学</span><span>黏度 / 导热</span><span>发泡剂特性</span><span>产品结构</span><span>模具结构</span></div>
+        <div class="note">研发给的固定可行域表也放在这一层，做<b>硬护栏</b>——便宜、可解释、好验证。</div>
+      </article>
+      <article class="card">
+        <h3>初始状态 — 每箱起点</h3>
+        <p>没有起点，仿真只能假设标准状态，结果就不准。</p>
+        <div class="chips"><span>本箱起始模温</span><span>夹具余热</span><span>上一箱状态</span><span>条码绑定</span></div>
+        <div class="note">数据缺失、时间对不齐、条码绑不上 → <b>标「不适用」，禁止自动下发</b>，不补数硬算。</div>
+      </article>
+    </div>
+
+    <div class="arrow" aria-hidden="true"><svg width="28" height="26" viewBox="0 0 28 26" fill="none"><path d="M14 2v18M6 14l8 9 8-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+
+    <!-- 2 MODELS -->
+    <div class="stage"><i>2</i><div><h2>双模型层 · 同输入，不同输出</h2><p>输入一样，看的东西完全不一样</p></div><div class="rule"></div></div>
+    <div class="grid2">
+      <article class="model model-teal">
+        <div class="role">机理模型 · 像物理课本</div>
+        <h3>按物理，划红线</h3>
+        <p class="sub">反应 — 传热 — 发泡 / 固化机理，做成可上边缘的降阶模型。在固化过程里边算边更新，不等检测时才算。</p>
+        <div class="outlabel">输出 · 过程进行到哪了、能不能这么调</div>
+        <ul class="out">
+          <li><b>关键过程状态</b><span>固化度、反应转化率、温度趋势、发泡压力、易出气泡 / 空洞的位置</span></li>
+          <li><b>动态可行域 + 调整约束</b><span>结合本箱环境与料性算出：还能调多少、单次步长上限多少</span></li>
+          <li><b>适用性标识</b><span>在不在适用范围、可不可信；超范围标「不适用」</span></li>
+        </ul>
+        <div class="domain">
+          <table>
+            <tr><td>静态可行域（研发基线）</td><td>料比 1.00–1.15</td></tr>
+            <tr><td>料温 / 模芯 / 夹具</td><td>18–28℃ / 35–55℃ / 30–50℃</td></tr>
+            <tr><td>固化时间</td><td>180–600 s</td></tr>
+            <tr><td>安全基线</td><td>1.08 · 22℃ · 45℃ · 360 s</td></tr>
+          </table>
+        </div>
+        <div class="pros"><span>✓ 没数据也能给底线，换批次、换产品不易被带偏，能说清「为什么不行」</span><span>✕ 只是简化模型，算不准精确缺陷概率，也抓不到设备磨损这类经验因素</span></div>
+      </article>
+
+      <article class="model model-amber">
+        <div class="role">数据模型 · 像老师傅</div>
+        <h3>凭经验，猜结果</h3>
+        <p class="sub">LightGBM 小模型，学历史每箱参数与热成像 NG 标签的规律，专抓非线性与组合效应。</p>
+        <div class="outlabel">输出 · 结果会怎么样、该往哪调</div>
+        <ul class="out">
+          <li><b>缺陷概率 + 判定</b><span>概率 ≥ 0.50 判 NG；这是它的核心输出</span></li>
+          <li><b>置信度</b><span>低于 0.70 就不自动走，转人工 / 大模型辅助判断</span></li>
+          <li><b>建议参数 + 目标分</b><span>在允许范围内，给出它认为最划算的一组参数</span></li>
+          <li><b>影响因子</b><span>这次主要是谁在拖后腿，如料温与模芯温度</span></li>
+        </ul>
+        <div class="domain" style="border-color:var(--amber-line)">
+          <table>
+            <tr><td>最擅长</td><td style="text-align:left;font-weight:600;color:var(--ink)">料冷 + 模芯冷一起出问题，这类组合规律规则写不出来，它能从历史 NG 里学到</td></tr>
+            <tr><td>典型输出</td><td>概率 0.8155 · 高风险</td></tr>
+          </table>
+        </div>
+        <div class="pros"><span>✓ 能学到规则写不出的规律，预测细、反应快</span><span>✕ 没见过的情况会瞎猜；数据少、标签脏就不可信；讲不清物理原因</span></div>
+      </article>
+    </div>
+
+    <div class="bridge">
+      <span class="badge">二期增强</span>
+      <p><b>真正的融合，不只是串联把关：</b>机理算出的固化度、反应程度、温度趋势，作为<b>特征</b>喂给数据模型。数据模型不必再从头学物理，只学「机理算不准的那部分残差」——样本少也好用，换批次外推也更稳。一期先用「机理把关 + 数据建议」过验收，二期再升级到这一步。</p>
+    </div>
+
+    <div class="arrow" aria-hidden="true"><svg width="28" height="26" viewBox="0 0 28 26" fill="none"><path d="M14 2v18M6 14l8 9 8-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+
+    <!-- 3 FUSION -->
+    <div class="stage"><i>3</i><div><h2>融合决策层 · 顺序不能反</h2><p>先让机理把关，再听数据的建议</p></div><div class="rule"></div></div>
+    <section class="fusion">
+      <h3>三道关，缺一不可</h3>
+      <p class="sub">最终下发参数必须同时满足两边：在机理的框里，而且数据模型算出来缺陷概率最低。</p>
+      <div class="gates">
+        <div class="gate redgate"><div class="n">第 1 关 · 否决</div><h4>机理先审</h4><p>建议参数一出可行域 / 白名单，直接否决，不下发。例：数据想把模芯提到 58℃，上限 55℃、白名单只到 52℃ —— 拦截。</p></div>
+        <div class="gate"><div class="n">第 2 关 · 评估</div><h4>数据再评</h4><p>在可行域内，数据模型给缺陷概率与建议值，判断这组参数到底好不好，而不只是合不合格。</p></div>
+        <div class="gate"><div class="n">第 3 关 · 兜底</div><h4>冲突找人</h4><p>两者打架、置信度 &lt; 0.70、或超出历史分布，一律转人工 / 大模型辅助，不自动下发。</p></div>
+      </div>
+      <div class="opt"><b>域内多目标优化</b><span>在可行域 + 白名单内搜索（料比 1.00–1.12 · 料温 19–27℃ · 模芯 38–52℃ · 固化 240–540 s）</span><span>同时算：质量 · 料耗 · 能耗</span><span>不再是「一律往中心靠」</span></div>
+    </section>
+
+    <div class="arrow" aria-hidden="true"><svg width="28" height="26" viewBox="0 0 28 26" fill="none"><path d="M14 2v18M6 14l8 9 8-9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+
+    <!-- 4 OUTPUT -->
+    <div class="stage"><i>4</i><div><h2>输出与执行层 · 人来放行</h2><p>大模型不直接控 PLC，建议必须过校验、经确认</p></div><div class="rule"></div></div>
+    <div class="grid3">
+      <article class="outcome ok"><span class="tag">双确信 · 一致</span><h3>建议参数 → 受控下发</h3><p>依次过 8 项安全校验、人工确认，再下发并做读回验证，留审计与回滚记录。</p></article>
+      <article class="outcome warn"><span class="tag">有风险 · 存疑</span><h3>只提示，不下发</h3><p>机理说能过、数据说危险（如五参数都贴边），判 NG 转人工复核，不走受控自动。</p></article>
+      <article class="outcome stop"><span class="tag">不可行 · 不适用</span><h3>拦截并留痕</h3><p>越界、超适用范围或数据缺失：禁止自动下发，只出风险提示并报警留痕。</p></article>
+    </div>
+    <div class="degrade"><b>超时降级，不堵产线：</b>机理仿真超时或异常时，先出热成像结果 + 静态规则与数据模型的判断，本箱标「不适用」，算力恢复后再补算 —— 不因系统导致停线。</div>
+  </main>
+
+  <!-- EXAMPLE -->
+  <section class="example">
+    <h2>同一箱，两种输出</h2>
+    <p>输入完全相同，看两个模型分别说了什么，最后怎么合到一起。</p>
+    <div class="inputbar">
+      <span><small>料比</small>1.10</span><span><small>料温</small>19.0℃</span><span><small>模芯</small>38.0℃</span><span><small>夹具</small>42.0℃</span><span><small>固化</small>300 s</span><span><small>环境</small>26℃</span>
+    </div>
+    <div class="vs">
+      <div class="vsbox" style="background:var(--amber-bg);border:1px solid var(--amber-line)"><h4>数据模型说：结果不好</h4><div class="big">缺陷概率 0.8155</div><p>判高风险。主要拖累因子是料温与模芯温度，建议往 1.0875 / 21.0℃ / 41.5℃ / 345 s 调，目标分 0.5447。</p></div>
+      <div class="vsmid">＋</div>
+      <div class="vsbox" style="background:var(--teal-bg);border:1px solid var(--teal-line)"><h4>机理模型说：过程不对</h4><div class="big">固化度偏低</div><p>料温 &lt; 20℃ 且模芯 &lt; 40℃，反应慢、传热不够，有欠发泡风险；上述建议仍在可行域内，允许调整。</p></div>
+    </div>
+    <div class="result">融合结论：<b>两者一致指向同一问题 → 采纳建议参数 1.0875 / 21.0℃ / 41.5℃ / 345 s，人工确认后模拟下发。</b></div>
+  </section>
+
+  <!-- BOUNDARIES -->
+  <section class="section">
+    <h2>三条边界，记住就行</h2>
+    <p>分工说到底是边界问题：谁能做什么、谁不能越过谁。</p>
+    <div class="rules">
+      <article class="rulecard"><div class="num">01</div><h3>机理管「能不能」，数据管「好不好」</h3><p>机理是裁判，决定一组参数可不可行；数据是参谋，决定可行范围里哪组更好。</p></article>
+      <article class="rulecard"><div class="num">02</div><h3>谁也不能替对方干活</h3><p>机理不能替数据做精细缺陷预测；数据再确信，也不能推翻机理、越界下发。</p></article>
+      <article class="rulecard"><div class="num">03</div><h3>拿不准，就不自动</h3><p>两者冲突、低置信度、超出分布、超出适用范围 —— 一律不自动下发，转人工。</p></article>
+    </div>
+  </section>
+
+  <!-- COMPARE TABLE -->
+  <section class="section">
+    <h2>分工对照表</h2>
+    <p>放到技术方案里的一页速查。</p>
+    <div class="tablewrap"><div class="scroll">
+      <table class="cmp">
+        <thead><tr><th></th><th>数据模型</th><th>机理模型</th></tr></thead>
+        <tbody>
+          <tr><td>定位</td><td>老师傅的经验</td><td>物理课本的红线</td></tr>
+          <tr><td>输入</td><td colspan="2">相同：料比、料温、注料重量 / 压力、模芯 / 夹具温度、环境温湿度、发泡 / 固化时间（含过程轨迹）；机理另需料性等静态配置</td></tr>
+          <tr><td>输出</td><td>缺陷概率、置信度、建议参数、影响因子</td><td>过程状态、可行域、调整约束、适用性标识</td></tr>
+          <tr><td>擅长</td><td>抓非线性与组合效应，从历史 NG 学规律</td><td>给底线、解释原因，换产品可重算可行域</td></tr>
+          <tr><td>短板</td><td>没见过会瞎猜，黑盒，讲不清为什么</td><td>算不准精确概率，抓不到经验性因素</td></tr>
+          <tr><td>权力</td><td>建议权 —— 只能在框内提建议</td><td>否决权 —— 出框一票否决</td></tr>
+        </tbody>
+      </table>
+    </div></div>
+  </section>
+
+  <!-- SCENARIOS -->
+  <section class="section">
+    <h2>三个场景，看融合怎么裁决</h2>
+    <p>点开每个场景，看最后是谁说了算、为什么。</p>
+    <div class="tabs" role="tablist" aria-label="融合场景">
+      <button role="tab" aria-selected="true" data-s="0">场景 1 · 都说有问题</button>
+      <button role="tab" aria-selected="false" data-s="1">场景 2 · 数据想调，机理不让</button>
+      <button role="tab" aria-selected="false" data-s="2">场景 3 · 机理放行，数据报警</button>
+    </div>
+    <div class="scenario" id="scenarioBox"></div>
+  </section>
+
+  <!-- TIMING & VALIDATION -->
+  <section class="section">
+    <h2>时效与验证：为什么每箱都做也来得及</h2>
+    <p>全三维仿真肯定跟不上；降阶模型 + 固化过程边算边更新 + 检测点只做融合，就能进窗口。数字为协议口径与设计估算。</p>
+    <div class="strip">
+      <div class="stat"><div class="v">15 s</div><div class="l">过站节拍，约 240 箱 / 小时，多箱流水线并行</div></div>
+      <div class="stat"><div class="v">≤ 3 s</div><div class="l">检测窗口：抓图到检测 + 风险预测出结果；融合合计约 1–2 s</div></div>
+      <div class="stat"><div class="v">≥ 100 组</div><div class="l">联合验证冻结数据集：趋势一致率 ≥ 90%，归一化误差 ≤ 10%</div></div>
+      <div class="stat"><div class="v">≥ 85% / 0 / ≤10%</div><div class="l">高风险召回 / 严重漏检 / 误报率 —— 融合须优于任一单模型（消融对比）</div></div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <b>现状说明：</b>上图是设计目标。当前正式系统中，机理侧仍是约束框架（只判在不在框、违反哪条），固化度等过程状态尚未真正算出；数据侧训练模型槽位（LightGBM）已注册但未接入，融合的验证指标尚未用冻结数据集验证。因此分工为设计分工，落地按「一期串联把关过验收、二期残差融合提质量」推进。静态研发规则与机理仿真并不等效：前者在安全拦截上效果接近，但在预测、优化、换产品与根因分析上差很多，故两者分层共存。
+  </footer>
+</div>
+
+<script>
+var scenarios=[
+ {t:"场景 1 · 两者都说有问题，就调参",d:"模拟箱：料比 1.10、料温 19.0℃、模芯 38.0℃、固化 300 s。数据模型算出缺陷概率 0.8155；机理也报「料温 < 20℃ 且模芯 < 40℃，有欠发泡风险」。两个判断指向同一原因，建议也落在可行域内。",v:"结论：采纳建议 1.0875 / 21.0℃ / 41.5℃ / 345 s，人工确认后下发。",c:"v-ok"},
+ {t:"场景 2 · 数据想调，机理说不行，就不调",d:"数据模型建议把模芯提到 58℃ 来降缺陷。但机理可行域上限是 55℃，下发白名单更窄、只到 52℃。数据的建议再好，也越过了物理红线。",v:"结论：机理一票否决，直接拦截，不下发。这就是否决权的用法。",c:"v-stop"},
+ {t:"场景 3 · 机理说能过，数据说危险，就不自动放",d:"五个参数都在可行域里，但都贴着边：料比 1.14、料温 27℃、模芯 54℃、固化 190 s。机理逐项看都合格，数据模型却可能算出缺陷概率 > 0.5 —— 单项合格不等于组合安全。",v:"结论：判 NG，转人工复核，不走受控自动下发。",c:"v-warn"}
+];
+var box=document.getElementById('scenarioBox');
+function render(i){
+  var s=scenarios[i];
+  box.innerHTML='<h3></h3><p></p><div class="verdict '+s.c+'"></div>';
+  box.querySelector('h3').textContent=s.t;
+  box.querySelector('p').textContent=s.d;
+  box.querySelector('.verdict').textContent=s.v;
+  var btns=document.querySelectorAll('.tabs button');
+  for(var k=0;k<btns.length;k++){btns[k].setAttribute('aria-selected', k===i?'true':'false');}
+}
+var buttons=document.querySelectorAll('.tabs button');
+for(var i=0;i<buttons.length;i++){
+  buttons[i].addEventListener('click',function(){render(parseInt(this.getAttribute('data-s'),10));});
+}
+render(0);
+</script>
+</body>
+</html>
