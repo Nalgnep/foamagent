@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>三模型融合完整架构图（简化版）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&family=Noto+Serif+SC:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eef0f2; --paper:#ffffff; --ink:#17202a; --muted:#5c6b7a; --line:#d7dde3;
+    --app:#0e4d64; --app-bg:#e6f2f5;
+    --fusion:#8a5a12; --fusion-bg:#fdf3dd; --fusion-line:#d9a441;
+    --data:#1d4ed8; --data-bg:#e8eefc;
+    --mech:#0f766e; --mech-bg:#e0f2ef;
+    --llm:#5b4a8a; --llm-bg:#ece8f6;
+    --sense:#b33a1f; --sense-bg:#fdeee9;
+    --plat:#475569; --plat-bg:#eef1f4;
+    --dev:#26313d; --dev-bg:#e8ebee;
+    --safe:#7f1d1d; --safe-bg:#fbecec;
+    --shadow:0 1px 3px rgba(20,30,40,.08),0 8px 24px rgba(20,30,40,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0f1419; --paper:#171e26; --ink:#e8edf2; --muted:#9aabb9; --line:#2c3844;
+      --app-bg:#12333f; --fusion-bg:#3a2f14; --sense-bg:#3d2019; --plat-bg:#232c36; --dev-bg:#202932;
+      --data-bg:#1b2a52; --mech-bg:#123b36; --llm-bg:#2c2547; --safe-bg:#3a1d1d;
+      --shadow:0 1px 3px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.3);
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans SC",system-ui,-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;-webkit-font-smoothing:antialiased}
+  .sheet{max-width:1320px;margin:0 auto;padding:18px 16px 28px}
+
+  /* ---------- header ---------- */
+  header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px 16px;margin-bottom:12px}
+  .h-left h1{font-family:"Noto Serif SC",serif;font-size:clamp(21px,3.2vw,30px);font-weight:900;line-height:1.2;margin:0;letter-spacing:.01em}
+  .h-left p{margin:5px 0 0;color:var(--muted);font-size:13px;line-height:1.55}
+  .h-left p b{color:var(--ink)}
+  .h-right{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .tag{font-size:11.5px;font-weight:700;border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:5px 10px;color:var(--muted);white-space:nowrap}
+  .tag strong{color:var(--ink)}
+  .playbtn{appearance:none;border:1px solid var(--ink);background:var(--ink);color:var(--paper);font:inherit;font-size:12.5px;font-weight:700;border-radius:999px;padding:7px 14px;cursor:pointer}
+  .playbtn:focus-visible{outline:2px solid var(--fusion-line);outline-offset:2px}
+
+  /* ---------- diagram frame ---------- */
+  .frame{background:var(--paper);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:14px 14px 12px;position:relative}
+  .flow-note{display:flex;justify-content:space-between;gap:10px;font-size:11.5px;color:var(--muted);margin:0 2px 10px;flex-wrap:wrap}
+  .flow-note span b{color:var(--ink)}
+
+  .layer{display:grid;grid-template-columns:86px 1fr;gap:10px;margin-bottom:8px}
+  .layer:last-of-type{margin-bottom:0}
+  .rail{border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:10px 4px;text-align:center;color:#fff}
+  .rail .no{font-size:10px;font-weight:700;letter-spacing:.14em;opacity:.75}
+  .rail .nm{font-size:14.5px;font-weight:900;line-height:1.25;writing-mode:horizontal-tb}
+  .rail .en{font-size:9.5px;letter-spacing:.08em;opacity:.65;text-transform:uppercase}
+  .r-app{background:var(--app)} .r-fusion{background:#a86f14} .r-model{background:#33475e}
+  .r-sense{background:var(--sense)} .r-plat{background:var(--plat)} .r-dev{background:var(--dev)}
+  .body{min-width:0}
+
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{flex:1 1 130px;border:1px solid var(--line);border-radius:9px;padding:8px 10px;background:var(--paper)}
+  .chip b{display:block;font-size:13.5px;line-height:1.3}
+  .chip span{display:block;font-size:11.5px;color:var(--muted);line-height:1.5;margin-top:2px}
+  .app-band{background:var(--app-bg);border:1px solid var(--line);border-radius:10px;padding:9px}
+  .plat-band{background:var(--plat-bg);border:1px solid var(--line);border-radius:10px;padding:9px}
+  .dev-band{background:var(--dev-bg);border:1px solid var(--line);border-radius:10px;padding:9px}
+  .app-band .chip,.plat-band .chip,.dev-band .chip{background:var(--paper)}
+
+  /* connector between layers */
+  .join{display:flex;align-items:center;gap:10px;margin:0 0 8px 96px;color:var(--muted);font-size:11px;line-height:1.4}
+  .join::before,.join::after{content:"";height:1px;background:var(--line);flex:0 0 18px}
+  .join i{font-style:normal;color:var(--ink);font-weight:700}
+
+  /* fusion engine */
+  .fusion-band{background:var(--fusion-bg);border:1.5px solid var(--fusion-line);border-radius:10px;padding:10px}
+  .steps{display:flex;align-items:stretch;gap:0;flex-wrap:nowrap}
+  .step{flex:1 1 0;min-width:0;background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:8px 9px;transition:box-shadow .25s,border-color .25s}
+  .step .k{font-size:10.5px;font-weight:900;letter-spacing:.1em;color:var(--fusion)}
+  .step b{display:block;font-size:14px;margin:2px 0}
+  .step span{font-size:11.5px;color:var(--muted);line-height:1.5;display:block}
+  .step.lit{border-color:var(--fusion-line);box-shadow:0 0 0 3px color-mix(in srgb,var(--fusion-line) 35%,transparent)}
+  .arr{align-self:center;flex:0 0 22px;text-align:center;color:var(--fusion);font-weight:900;font-size:15px}
+  .fusion-sub{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:11.5px;color:var(--muted);line-height:1.5}
+  .fusion-sub b{color:var(--ink)}
+
+  /* three models */
+  .models{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
+  .model{border-radius:10px;border:1.5px solid var(--line);padding:11px 12px 10px;position:relative}
+  .model.data{background:var(--data-bg);border-color:color-mix(in srgb,var(--data) 45%,var(--line))}
+  .model.mech{background:var(--mech-bg);border-color:color-mix(in srgb,var(--mech) 45%,var(--line))}
+  .model.llm{background:var(--llm-bg);border-color:color-mix(in srgb,var(--llm) 45%,var(--line))}
+  .model .who{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+  .model h3{margin:0;font-size:16.5px;font-weight:900}
+  .model .verb{font-size:12px;font-weight:900;padding:2px 8px;border-radius:999px;color:#fff;white-space:nowrap}
+  .data .verb{background:var(--data)} .mech .verb{background:var(--mech)} .llm .verb{background:var(--llm)}
+  .model .one{font-size:12px;color:var(--muted);margin:3px 0 8px;line-height:1.5}
+  .model ul{margin:0;padding:0;list-style:none}
+  .model li{font-size:12.5px;line-height:1.45;padding:5px 0;border-top:1px dashed var(--line);display:flex;justify-content:space-between;gap:8px}
+  .model li:first-child{border-top:0}
+  .model li em{font-style:normal;color:var(--muted);font-size:11.5px;text-align:right;flex-shrink:0}
+  .model .foot{margin-top:8px;font-size:11.5px;line-height:1.55;border-top:1px solid var(--line);padding-top:7px}
+  .model .foot b{font-weight:900}
+  .vs{display:flex;align-items:center;justify-content:center}
+  .plus-note{grid-column:1/-1;text-align:center;font-size:11.5px;color:var(--muted);margin-top:1px}
+  .plus-note b{color:var(--ink)}
+
+  /* perception */
+  .sense-band{background:var(--sense-bg);border:1.5px solid color-mix(in srgb,var(--sense) 45%,var(--line));border-radius:10px;padding:10px}
+  .sense-grid{display:grid;grid-template-columns:1fr 1.5fr 1fr;gap:8px}
+  .sense-box{background:var(--paper);border:1px solid var(--line);border-radius:9px;padding:9px 10px}
+  .sense-box h4{margin:0 0 4px;font-size:13.5px}
+  .sense-box p{margin:0;font-size:11.5px;color:var(--muted);line-height:1.55}
+  .sense-box p b{color:var(--ink)}
+  .grades{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap}
+  .g{flex:1;text-align:center;border-radius:7px;padding:5px 2px;font-size:11px;font-weight:700;line-height:1.35;border:1px solid var(--line);background:var(--paper)}
+  .g small{display:block;font-weight:400;color:var(--muted);font-size:10.5px}
+  .gA{border-color:#2f9e6e}.gB{border-color:#7fb069}.gC{border-color:#d9a441}.gD{border-color:#c0392b}
+  .sense-supply{display:flex;flex-wrap:wrap;gap:5px 16px;margin-top:8px;font-size:11.5px;color:var(--muted)}
+  .sense-supply b{color:var(--sense)}
+
+  /* safety strip */
+  .safe{margin-top:10px;background:var(--safe-bg);border:1.5px solid color-mix(in srgb,var(--safe) 40%,var(--line));border-radius:10px;padding:10px 12px;display:grid;grid-template-columns:1fr 1fr;gap:8px 22px}
+  .safe h4{margin:0 0 4px;font-size:13px;color:var(--safe)}
+  .safe p{margin:0;font-size:12px;line-height:1.6;color:var(--ink)}
+  .safe p span{color:var(--muted)}
+
+  footer{margin-top:12px;display:flex;flex-wrap:wrap;gap:6px 18px;justify-content:space-between;font-size:11.5px;color:var(--muted);line-height:1.6}
+  footer b{color:var(--ink)}
+
+  @media (max-width:860px){
+    .models{grid-template-columns:1fr}
+    .sense-grid{grid-template-columns:1fr}
+    .safe{grid-template-columns:1fr}
+    .steps{flex-wrap:wrap;gap:7px}
+    .step{flex:1 1 46%}
+    .arr{display:none}
+    .layer{grid-template-columns:64px 1fr}
+    .rail .nm{font-size:12.5px}
+    .join{margin-left:74px}
+  }
+  @media (prefers-reduced-motion: reduce){ .step{transition:none} }
+  @media print{ .playbtn{display:none} body{background:#fff} .frame{box-shadow:none} }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <header>
+    <div class="h-left">
+      <h1>三模型融合完整架构 · 一图版</h1>
+      <p>成都冰箱工厂 <b>B 线发泡工艺智能体</b> —— 感知在底层、三模型在中层、融合决策在上层，下发必经人工确认。</p>
+    </div>
+    <div class="h-right">
+      <span class="tag">依据 <strong>协议 5.3 b)(3) / 6.3 第 8 项</strong></span>
+      <span class="tag">平台 <strong>信智 HiAI · 星海 HiAgent</strong></span>
+      <button class="playbtn" id="playBtn" type="button">▶ 播放决策流程</button>
+    </div>
+  </header>
+
+  <div class="frame">
+    <p class="flow-note">
+      <span><b>↑ 数据上行</b>：热像与参数逐箱对齐，向上供数</span>
+      <span><b>↓ 决策下行</b>：建议经校验与人工确认后才下发</span>
+      <span><b>⟲ 效果回流</b>：下发效果验证后回流再训练与知识沉淀</span>
+    </p>
+
+    <!-- 6 应用层 -->
+    <section class="layer" aria-label="应用与协同层">
+      <div class="rail r-app"><span class="no">L6</span><span class="nm">应用<br>协同</span><span class="en">Apps</span></div>
+      <div class="body app-band"><div class="chips">
+        <div class="chip"><b>工艺驾驶舱</b><span>KPI · 当前箱 · 班次判定分布</span></div>
+        <div class="chip"><b>根因分析</b><span>贡献因素排序 · 证据链</span></div>
+        <div class="chip"><b>参数建议</b><span>候选参数 · 目标分 · 解释</span></div>
+        <div class="chip"><b>质量趋势</b><span>合格率趋势 · 大屏监控</span></div>
+        <div class="chip"><b>诊断报告</b><span>LLM 成文 · 班报 / 异常报告</span></div>
+      </div></div>
+    </section>
+    <div class="join"><span>建议与报告向上呈现，<i>确认动作</i>在此发起</span></div>
+
+    <!-- 5 融合决策引擎 -->
+    <section class="layer" aria-label="融合决策引擎">
+      <div class="rail r-fusion"><span class="no">L5</span><span class="nm">融合<br>决策</span><span class="en">Fusion</span></div>
+      <div class="body fusion-band">
+        <div class="steps" id="steps">
+          <div class="step" data-s="1"><span class="k">STEP 1 · 提案</span><b>数据模型出候选</b><span>候选参数 + 目标分 + 置信度</span></div>
+          <div class="arr">→</div>
+          <div class="step" data-s="2"><span class="k">STEP 2 · 校验</span><b>机理模型查可行域</b><span>硬约束过滤 · 超界即否决 / 修正</span></div>
+          <div class="arr">→</div>
+          <div class="step" data-s="3"><span class="k">STEP 3 · 仲裁</span><b>规则引擎裁决</b><span>冲突规则 + 置信门控，规则写死在引擎内</span></div>
+          <div class="arr">→</div>
+          <div class="step" data-s="4"><span class="k">STEP 4 · 解释</span><b>语言模型成文</b><span>根因叙事 · 风险提示 · 处置建议</span></div>
+          <div class="arr">→</div>
+          <div class="step" data-s="5"><span class="k">STEP 5 · 确认</span><b>人工确认</b><span>工艺人员确认后才进入下发通道</span></div>
+        </div>
+        <div class="fusion-sub">
+          <span><b>机理是共同决策者</b>：否决权 · 修正权 · 解释权</span>
+          <span><b>双模型方向冲突</b>：不自动裁决，转人工</span>
+          <span><b>仲裁不由 LLM 临场决定</b></span>
+        </div>
+      </div>
+    </section>
+    <div class="join"><span>三模型并行供数，<i>互不直连</i>，只经融合引擎协同</span></div>
+
+    <!-- 4 三模型层 -->
+    <section class="layer" aria-label="三模型层">
+      <div class="rail r-model"><span class="no">L4</span><span class="nm">三<br>模型</span><span class="en">Models</span></div>
+      <div class="body"><div class="models">
+        <article class="model data">
+          <div class="who"><h3>数据模型</h3><span class="verb">会预测</span></div>
+          <p class="one">凭历史数据学规律，回答「大概率会怎样」。</p>
+          <ul>
+            <li>缺陷概率预测 <em>逐箱输出</em></li>
+            <li>参数响应建模 <em>候选搜索</em></li>
+            <li>候选参数 + 目标分 <em>带置信度</em></li>
+          </ul>
+          <p class="foot">载体：<b>信智 HiAI</b> · LightGBM 等<br>短板：分布外不可靠 → 须机理兜底</p>
+        </article>
+        <article class="model mech">
+          <div class="who"><h3>机理模型</h3><span class="verb">守边界</span></div>
+          <p class="one">按发泡物理化学规律，回答「物理上能不能」。</p>
+          <ul>
+            <li>可行域与硬约束 <em>参数窗口</em></li>
+            <li>过程状态估计 <em>孪生对照</em></li>
+            <li>异常物理解释 <em>温度场对照</em></li>
+          </ul>
+          <p class="foot">形态：<b>机理孪生</b> · 约束框架<br>权力：<b>否决 · 修正 · 解释</b></p>
+        </article>
+        <article class="model llm">
+          <div class="who"><h3>大语言模型</h3><span class="verb">懂现场</span></div>
+          <p class="one">认知与协同层，回答「为什么、怎么办、怎么说清」。</p>
+          <ul>
+            <li>私域知识问答 <em>RAG 检索</em></li>
+            <li>根因叙事与报告 <em>引用证据</em></li>
+            <li>多步骤任务编排 <em>HiAgent</em></li>
+          </ul>
+          <p class="foot">部署：<b>私有化优先</b>（千问 / DeepSeek 等）<br>定位：<b>不计算、不控制、不改判等级</b></p>
+        </article>
+        <p class="plus-note">＋ 感知侧还有第四个模型 —— <b>气泡识别模型</b>（在 L3 感知检测层，见下），负责把热像变成可用的缺陷标签。</p>
+      </div></div>
+    </section>
+    <div class="join"><span>标签、温度场、检测摘要自感知层<i>三方供数</i>至三模型</span></div>
+
+    <!-- 3 感知层 -->
+    <section class="layer" aria-label="感知层 红外热成像气泡检测">
+      <div class="rail r-sense"><span class="no">L3</span><span class="nm">感知<br>检测</span><span class="en">Sense</span></div>
+      <div class="body sense-band">
+        <div class="sense-grid">
+          <div class="sense-box">
+            <h4>5 路红外热成像</h4>
+            <p>顶视 <b>1 路</b> ＋ 四侧各 <b>1 路</b>，同步采集；与<b>条码、型号、工艺参数</b>按时间戳逐箱对齐。任一路故障只标「检测不完整」，<b>不出合格结论</b>。</p>
+          </div>
+          <div class="sense-box">
+            <h4>气泡识别模型 · 三段式（边缘推理，单箱 ≤ 3 秒）</h4>
+            <p><b>定位检测</b>（位置与轮廓）→ <b>特征量化</b>（数量 · 面积占比 · 最大尺寸 · 分布密度 · 温差）→ <b>等级分类</b>（等级 ＋ 置信度，低置信强制待复核；超时转人工队列，不堵节拍）</p>
+            <div class="grades">
+              <div class="g gA">A 级<small>自动通过</small></div>
+              <div class="g gB">B 级<small>通过 · 观察</small></div>
+              <div class="g gC">C 级<small>转人工复核</small></div>
+              <div class="g gD">D 级<small>拦截 · 复核处置</small></div>
+            </div>
+          </div>
+          <div class="sense-box">
+            <h4>AI 初筛 ＋ 人工复核</h4>
+            <p>模型<b>不单独作报废决定</b>；复核员可推翻等级，<b>推翻样本留存</b>为训练标注，持续回训气泡模型。</p>
+          </div>
+        </div>
+        <div class="sense-supply">
+          <span><b>→ 数据模型</b>：分级与量化特征作缺陷标签，解冷启动缺标签</span>
+          <span><b>→ 机理模型</b>：实测温度场与气泡分布逐箱对照</span>
+          <span><b>→ 语言模型</b>：结构化检测摘要供根因叙事，不得改判等级</span>
+        </div>
+      </div>
+    </section>
+    <div class="join"><span>原始热像与参数先落<i>数据层</i>，再向上供数</span></div>
+
+    <!-- 2 数据层 -->
+    <section class="layer" aria-label="数据与追溯层">
+      <div class="rail r-plat"><span class="no">L2</span><span class="nm">数据<br>追溯</span><span class="en">Data</span></div>
+      <div class="body plat-band"><div class="chips">
+        <div class="chip"><b>条码追溯</b><span>一箱一档 · 全程可查</span></div>
+        <div class="chip"><b>工艺参数时序</b><span>料温 · 模温 · 注料量 · 熟化</span></div>
+        <div class="chip"><b>检测与复核记录</b><span>等级 · 置信度 · 推翻标注</span></div>
+        <div class="chip"><b>知识库 / 案例库</b><span>工艺知识 · 历史根因 · SOP</span></div>
+        <div class="chip"><b>下发与审计日志</b><span>谁确认 · 何值 · 回读结果</span></div>
+      </div></div>
+    </section>
+    <div class="join"><span>设备数据经网关采集，<i>只读优先</i></span></div>
+
+    <!-- 1 设备层 -->
+    <section class="layer" aria-label="设备与控制层">
+      <div class="rail r-dev"><span class="no">L1</span><span class="nm">设备<br>控制</span><span class="en">Field</span></div>
+      <div class="body dev-band"><div class="chips">
+        <div class="chip"><b>发泡机与夹具</b><span>注料 · 合模 · 熟化</span></div>
+        <div class="chip"><b>PLC（S7-1200/1500）</b><span>联锁与实时控制在本层闭环</span></div>
+        <div class="chip"><b>传感与扫码</b><span>温度 · 压力 · 流量 · 箱体条码</span></div>
+        <div class="chip"><b>安全基线（示例窗口）</b><span>注料比 1.08 · 料温 22℃ · 模温 45℃ · 熟化 360s</span></div>
+      </div></div>
+    </section>
+
+    <!-- safety -->
+    <div class="safe" role="note" aria-label="安全闭环与验证">
+      <div>
+        <h4>安全下发闭环（唯一通道）</h4>
+        <p>参数白名单 → 人工确认 → 下发 → <b>回读验证</b> → 效果验证 → 不达标可<b>回滚</b>，全程审计。<span>LLM 不直连 PLC · 不动运行中的优化块 DB · 生产数据不上公网大模型。</span></p>
+      </div>
+      <div>
+        <h4>双轨验证（不冒充已达标）</h4>
+        <p><b>协议轨</b>对技术协议逐项验收，<b>灯塔轨</b>对灯塔工厂标准；未验证指标记为<b>「未验证」</b>。<span>气泡模型单独成套验证，D 级漏检一票否决。</span></p>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <span><b>读图顺序</b>：自下而上看供数（L1 → L4），自上而下看决策（L6 → L1），中间 L5 是唯一的裁决点。</span>
+    <span>现状口径：数据模型为规则占位、机理为约束框架、气泡模型待训练验证、LLM 深化属阶段 3–4 规划 —— 本图为<b>设计目标架构</b>。</span>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var btn=document.getElementById('playBtn');
+  var steps=Array.prototype.slice.call(document.querySelectorAll('#steps .step'));
+  var timer=null, idx=0;
+  function clearLit(){ steps.forEach(function(s){ s.classList.remove('lit'); }); }
+  function stop(){ if(timer){ clearInterval(timer); timer=null; } btn.textContent='▶ 播放决策流程'; }
+  btn.addEventListener('click',function(){
+    if(timer){ stop(); clearLit(); return; }
+    var reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    clearLit(); idx=0; btn.textContent='■ 停止播放';
+    steps[0].classList.add('lit');
+    if(reduce){ steps.forEach(function(s){ s.classList.add('lit'); }); stop(); return; }
+    timer=setInterval(function(){
+      idx++;
+      if(idx>=steps.length){ stop(); setTimeout(clearLit,900); return; }
+      clearLit(); steps[idx].classList.add('lit');
+    },1100);
+  });
+})();
+</script>
+</body>
+</html>
