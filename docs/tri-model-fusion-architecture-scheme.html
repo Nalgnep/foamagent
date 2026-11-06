@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>成都B线发泡智能体三模型融合架构方案</title>
+<style>
+@page{size:A4;margin:0}
+*{box-sizing:border-box;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+body{margin:0;font-family:'Noto Sans CJK SC','Liberation Sans',sans-serif;color:#1a2332;font-size:10.5pt;line-height:1.65}
+.page{min-height:297mm;padding:18mm 16mm 16mm 16mm;position:relative;overflow:hidden}
+.page+.page{page-break-before:always}
+h1{font-size:26pt;line-height:1.25;margin:0 0 6mm}
+h2{font-size:15pt;color:#0b3d2e;border-bottom:2.5px solid #00a651;padding-bottom:2mm;margin:0 0 5mm;line-height:1.35}
+h3{font-size:11.5pt;color:#0b3d2e;margin:5mm 0 2mm}
+p{margin:0 0 3mm}
+.small{font-size:9pt;color:#5b6b7f}
+.foot{position:absolute;bottom:10mm;left:16mm;right:16mm;font-size:8.5pt;color:#8a97a8;border-top:1px solid #dde3ea;padding-top:2mm;display:flex;justify-content:space-between}
+.lead{font-size:11.5pt;color:#33465e}
+table{width:100%;border-collapse:collapse;font-size:9.5pt;margin:3mm 0 5mm}
+th{background:#0b3d2e;color:#fff;padding:2.2mm 2.5mm;text-align:left;font-weight:700}
+td{padding:2.2mm 2.5mm;border-bottom:1px solid #dde3ea;vertical-align:top}
+tr:nth-child(even) td{background:#f4f8f6}
+ul{margin:1mm 0 4mm;padding-left:6mm}li{margin-bottom:1.5mm}
+.callout{background:#eef7f1;border-left:4px solid #00a651;padding:3.5mm 4mm;margin:4mm 0}
+.warn{background:#fdf3ec;border-left:4px solid #d97a2b;padding:3.5mm 4mm;margin:4mm 0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:4mm}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:3.5mm}
+.card{border:1px solid #d5dee6;border-top:4px solid #00a651;padding:4mm;background:#fff}
+.card b.t{display:block;font-size:11pt;margin-bottom:2mm;color:#0b3d2e}
+.tag{display:inline-block;background:#0b3d2e;color:#fff;font-size:8.5pt;padding:.6mm 2.5mm;border-radius:2mm;margin-bottom:3mm}
+.cover{background:#0b2e23;color:#fff;padding:22mm 16mm}
+.cover table td{background:#143d2f;color:#fff;border-bottom:1px solid #2a5a48}
+.cover table tr:nth-child(even) td{background:#1a4a38}
+.toc{margin-top:10mm;border-top:1px solid #2a5a48;padding-top:5mm;color:#cfe8da;font-size:10pt;line-height:1.9}
+.cover h1{color:#fff}.cover .lead{color:#cfe8da}
+.kpi{display:flex;gap:3mm;margin:5mm 0}.kpi div{flex:1;background:#123f30;padding:4mm}.kpi b{display:block;font-size:15pt;color:#7fe3ae}
+svg{width:100%;height:auto}
+.figcap{font-size:8.5pt;color:#5b6b7f;text-align:center;margin-top:1.5mm}
+section,figure,table,.card{break-inside:avoid;page-break-inside:avoid}
+</style></head><body>
+<!-- COVER -->
+<div class="page cover">
+<span class="tag">技术方案 · 供应商视角 · 对标灯塔工厂</span>
+<h1>成都 B 线发泡智能体<br>三模型融合架构方案</h1>
+<p class="lead">底层感知（红外热成像气泡检测）+ 数据模型 + 机理模型 + 大语言模型：分工、融合与安全闭环</p>
+<p style="color:#cfe8da">适用范围：成都冰箱工厂 B 线箱体发泡工序 —— 红外热成像气泡在线检测（5 路相机 + 气泡识别模型）、箱体条码追溯、发泡工艺参数优化智能体。本方案为设计目标架构：紧贴现行技术协议验收底线，并在协议基线之上对标灯塔工厂给出持续优化目标；凡尚未验证的能力，均明确标注，不以设计目标冒充已实现状态。</p>
+<div class="kpi"><div><b>1 套感知</b>5 路热成像 + 气泡识别<br>在线检测 · A/B/C/D 分级</div><div><b>3 类模型</b>预测 · 约束 · 理解<br>各司其职、互相校验</div><div><b>1 个融合引擎</b>共决策而非串行兜底<br>机理与数据同票决策</div><div><b>0 次直控</b>大语言模型不进<br>实时控制回路、不直连 PLC</div></div>
+<table style="color:#1a2332"><tr><th>读者</th><th>这份方案回答什么</th></tr>
+<tr><td>工厂与工艺管理者</td><td>三类模型各自解决什么问题、冲突时听谁的、效果如何验证</td></tr>
+<tr><td>工艺工程师</td><td>参数窗口、机理约束、安全基线如何进入决策，人工确认卡在哪里</td></tr>
+<tr><td>数字化 / IT 与供应商</td><td>分层架构、接口边界、部署形态、验证框架与分阶段落地路径</td></tr></table>
+<p class="small" style="color:#9fc7b2">现状基线（方案出发点）：正式系统已具备模型适配器接口与机理约束框架，数据模型当前为规则占位、已预留经训练的 LightGBM 模型槽位（待模型文件、特征清单与验证通过后启用）；验证指标在未验证时返回空值并标注“未验证”。安全基线示例：发泡比 1.08 / 22°C / 45°C / 360 s（以工艺工程师最终确认值为准）。</p>
+<div class="toc"><b style="color:#fff">本方案结构</b><br>一 结论先行 · 二 设计原则与红线 · 三 总体架构（五层） · 四 红外热成像气泡检测（感知层） · 五 数据模型 · 六 机理模型 · 七 大语言模型 · 八 融合决策引擎 · 九 单箱闭环与安全执行 · 十 验证框架与双轨指标 · 十一 分阶段路线与互联展望 · 附录 分工速查与术语</div>
+<div class="foot" style="border-color:#2a5a48;color:#9fc7b2"><span>成都 B 线发泡智能体项目</span><span>三模型融合架构方案 · 第 1 页</span></div>
+</div>
+
+<!-- P2 SUMMARY -->
+<div class="page">
+<h2>一、结论先行：三类模型是三种不同的能力，缺一不可</h2>
+<p class="lead">发泡参数优化的难点，不在于“选一个最强的模型”，而在于三类问题同时存在：历史规律要从数据里学，物理边界要由机理守住，现场知识与人机协同要靠语言模型组织起来。三模型融合，就是让三者在一个决策点上同时在场、互相制约。</p>
+<div class="grid3">
+<div class="card"><b class="t">数据模型 — 会预测</b><p>从历史生产、检测与质量数据中学习缺陷风险与参数响应，给出“往哪个方向调、预计收益多大”的候选建议。强在发现人眼看不见的相关性，弱在不懂物理、外推不可靠。</p></div>
+<div class="card"><b class="t">机理模型 — 守边界</b><p>以发泡反应、热传导与充填机理构建机理孪生，给出可行域、硬约束与物理解释。强在可解释、可外推到未见工况，弱在参数标定成本高、细节精度有限。</p></div>
+<div class="card"><b class="t">大语言模型 — 懂现场</b><p>组织工艺知识、SOP、案例与多源信息，完成根因叙事、方案说明、报告生成与多智能体任务编排。强在理解与表达，弱在数值计算与实时性，绝不直接下发参数。</p></div>
+</div>
+<div class="callout"><b>融合定位（协议口径）：</b>机理孪生是<b>共同决策者</b>，不是数据模型失效后的兜底项。技术协议 5.3 b)(3) 与 6.3 第 8 项所确立的共决策关系，在本方案中落实为：任何参数建议必须同时取得数据模型的收益依据与机理模型的可行性签字，缺一不出单。</div>
+<h3>方案的六条主线</h3>
+<ul>
+<li><b>一套底层感知：</b>5 路红外热成像同步采集，气泡识别模型在边缘侧完成定位、量化与 A/B/C/D 分级（设计时限单箱 3 秒内），AI 初筛 + 人工复核，分级结果同时作为数据模型的标签、机理模型的对照、语言模型的根因素材。</li>
+<li><b>一个融合决策引擎：</b>提案 — 校验 — 仲裁 — 解释四步结构化协议，三类模型的输入输出格式固定、可审计。</li>
+<li><b>一条单箱闭环：</b>采集 — 检测 — 追溯 — 决策 — 人工确认 — 下发 — 回读 — 效果验证，每箱可查、每步留痕。</li>
+<li><b>一组安全红线：</b>白名单参数、步长与窗口限幅、设备联锁优先、人工确认、回读校验、回滚与审计，大语言模型不进实时回路。</li>
+<li><b>一套双轨指标：</b>协议验收轨与灯塔优化轨分开计量；未验证指标显示“未验证”，不估算、不填数。</li>
+<li><b>一条分阶段路线：</b>先闭环可见，再模型可信，再多智能体互联；每阶段有明确的进入与退出条件。</li>
+</ul>
+<div class="foot"><span>三模型融合架构方案</span><span>第 2 页</span></div>
+</div>
+<!-- P3 PRINCIPLES -->
+<div class="page">
+<h2>二、设计原则与不可逾越的红线</h2>
+<h3>2.1 六条设计原则</h3>
+<table><tr><th style="width:26%">原则</th><th>含义与落地方式</th></tr>
+<tr><td>模型 — 提案 — 验证 — 变更 — 再验证</td><td>任何模型或参数变更都走完整循环；上线不是终点，变更后必须用冻结数据集与现场小批量重新验证。</td></tr>
+<tr><td>职责不串位</td><td>排产、设备控制、详细工艺设计与现场安全的既有职责不变；智能体只在授权范围内提案与辅助执行。</td></tr>
+<tr><td>可解释优先于更精确</td><td>给工艺工程师的建议必须附带依据：数据侧的特征贡献、机理侧的物理解释、知识侧的案例来源，三者至少其二。</td></tr>
+<tr><td>不确定就明示</td><td>置信度不足、超出训练分布、机理标定过期时，系统降级为“仅提示、不建议下发”，而不是给出一个看似确定的数字。</td></tr>
+<tr><td>边缘实时、平台进化</td><td>检测与联锁在边缘侧实时运行；模型训练、验证与知识更新在平台侧完成，经验证后版本化下发边缘。</td></tr>
+<tr><td>接口先行、能力可替换</td><td>模型以适配器方式接入（当前优化路径已走活动适配器），数据模型、机理模型、语言模型均可独立升级与回退。</td></tr></table>
+<h3>2.2 五条红线</h3>
+<div class="warn"><ul style="margin-bottom:0">
+<li>大语言模型<b>绝不直接控制 PLC</b>，不生成可直接执行的控制指令；其输出只能是文本建议与结构化提案草案。</li>
+<li>参数下发必须经过<b>白名单 + 窗口/步长校验 + 人工确认</b>；超窗、超步长或联锁未满足时，系统物理上无法下发。</li>
+<li>正在运行的优化块数据块<b>不为采集而取消优化访问</b>；采集走接口数据块复制 + 按符号名访问的受控通道。</li>
+<li>生产数据未经书面授权<b>不得上传公网或第三方大模型</b>；语言模型采用私域部署或经批准的专有通道。</li>
+<li>下发后必须<b>回读验证</b>，不一致即回滚到安全基线并报警；全过程写入审计记录，不可篡改。</li>
+</ul></div>
+<div class="foot"><span>三模型融合架构方案</span><span>第 3 页</span></div>
+</div>
+<!-- P4 OVERALL ARCH -->
+<div class="page">
+<h2>三、总体架构：五层结构，融合引擎居中</h2>
+<p>总体架构自下而上分为感知执行层、边缘层、平台与数据层、模型与融合层、智能体应用层。横向贯穿三条保障带：安全保障、验证治理、运维审计。集团平台对接上，模型服务依托信智 AI 平台（HiAI），智能体应用依托星海智能体平台（HiAgent）承载与编排，本系统不另建一套孤立平台。</p>
+<figure>
+<svg viewBox="0 0 720 340" xmlns="http://www.w3.org/2000/svg" font-family="Noto Sans CJK SC,sans-serif" font-size="13.5">
+<rect x="10" y="8" width="700" height="52" fill="#0b3d2e"/><text x="360" y="30" fill="#fff" text-anchor="middle" font-weight="bold">智能体应用层</text><text x="360" y="48" fill="#cfe8da" text-anchor="middle" font-size="12.5">参数优化智能体 · 根因分析助手 · 报表与复盘 · 大屏监控（星海 HiAgent 编排）</text>
+<rect x="10" y="70" width="700" height="72" fill="#eef7f1" stroke="#00a651"/><text x="360" y="90" text-anchor="middle" font-weight="bold" fill="#0b3d2e">模型与融合层 — 融合决策引擎</text>
+<rect x="24" y="100" width="210" height="32" fill="#fff" stroke="#5b6b7f"/><text x="129" y="120" text-anchor="middle">数据模型（预测/提案）</text>
+<rect x="255" y="100" width="210" height="32" fill="#fff" stroke="#5b6b7f"/><text x="360" y="120" text-anchor="middle">机理模型（约束/解释）</text>
+<rect x="486" y="100" width="210" height="32" fill="#fff" stroke="#5b6b7f"/><text x="591" y="120" text-anchor="middle">大语言模型（知识/编排）</text>
+<rect x="10" y="152" width="700" height="52" fill="#eef3f8" stroke="#7d94ad"/><text x="360" y="174" text-anchor="middle" font-weight="bold">平台与数据层</text><text x="360" y="192" text-anchor="middle" font-size="12.5">单箱追溯库 · 时序与特征库 · 知识库/向量库 · 模型注册与版本管理（信智 HiAI）</text>
+<rect x="10" y="214" width="700" height="52" fill="#fdf3ec" stroke="#d97a2b"/><text x="360" y="236" text-anchor="middle" font-weight="bold">边缘层</text><text x="360" y="254" text-anchor="middle" font-size="12.5">气泡识别推理（定位/量化/分级）· 条码绑定 · 协议网关（接口 DB + 符号访问）· 断网缓存与本地联锁</text>
+<rect x="10" y="276" width="700" height="52" fill="#f2f2f2" stroke="#5b6b7f"/><text x="360" y="298" text-anchor="middle" font-weight="bold">感知执行层</text><text x="360" y="316" text-anchor="middle" font-size="12.5">发泡机/模具 · 5 路热成像相机 · 扫码 · PLC（S7-1200/1500）· MES 接口</text>
+</svg>
+<p class="figcap">图 1 总体分层架构。融合决策引擎位于模型层中央：数据、机理、语言三类模型同层接入、统一仲裁，避免任何一类模型绕过引擎直接作用于执行层。</p>
+</figure>
+<table><tr><th style="width:22%">层</th><th style="width:38%">关键组件</th><th>边界说明</th></tr>
+<tr><td>感知执行层</td><td>PLC、5 路热成像相机、扫码、MES</td><td>只接受经网关校验的受控写入；原有联锁逻辑不改动。</td></tr>
+<tr><td>边缘层</td><td>气泡识别推理、网关、缓存</td><td>检测实时环在此闭合（单箱 3 秒设计时限）；平台失联时降级为检测+记录，不自动调参。</td></tr>
+<tr><td>平台与数据层</td><td>追溯、特征、知识、注册表</td><td>单箱数据以箱体条码为主线组织；追溯关联不硬绑，缺失可补录。</td></tr>
+<tr><td>模型与融合层</td><td>三类模型 + 融合引擎</td><td>本方案第四章讲感知层，第五至八章展开三类模型与融合引擎。</td></tr>
+<tr><td>智能体应用层</td><td>优化、根因、报表、大屏</td><td>面向人的是建议与解释；面向设备的只有经确认的执行单。</td></tr></table>
+<div class="foot"><span>三模型融合架构方案</span><span>第 4 页</span></div>
+</div>
+
+<!-- P5-6 THERMAL BUBBLE DETECTION -->
+<div class="page">
+<h2>四、红外热成像气泡检测：感知层先把每一箱“看清楚”</h2>
+<p class="lead">参数优化的前提是每箱的真实状态可测。红外热成像气泡检测位于整个架构的底层：脱模后对箱体各表面同步成像，由气泡识别模型定位气泡、量化分布并给出 A/B/C/D 分级。它不做参数决策，只负责把“这一箱到底怎么样”变成结构化、可追溯的事实，供上层三类模型使用。</p>
+<h3>4.1 五路相机布局与采集时序（设计目标）</h3>
+<figure>
+<svg viewBox="0 0 720 168" xmlns="http://www.w3.org/2000/svg" font-family="Noto Sans CJK SC,sans-serif" font-size="13">
+<rect x="270" y="44" width="180" height="80" fill="#eef7f1" stroke="#0b3d2e" stroke-width="2"/><text x="360" y="78" text-anchor="middle" font-weight="bold" fill="#0b3d2e">箱体（脱模后）</text><text x="360" y="98" text-anchor="middle" font-size="12">条码绑定 · 工位触发</text>
+<rect x="300" y="4" width="120" height="28" fill="#0b3d2e"/><text x="360" y="22" fill="#fff" text-anchor="middle">顶视相机 ×1</text>
+<rect x="40" y="64" width="120" height="28" fill="#1a6b4a"/><text x="100" y="82" fill="#fff" text-anchor="middle">左侧相机 ×1</text>
+<rect x="560" y="64" width="120" height="28" fill="#1a6b4a"/><text x="620" y="82" fill="#fff" text-anchor="middle">右侧相机 ×1</text>
+<rect x="180" y="136" width="120" height="28" fill="#1a6b4a"/><text x="240" y="154" fill="#fff" text-anchor="middle">前侧相机 ×1</text>
+<rect x="420" y="136" width="120" height="28" fill="#1a6b4a"/><text x="480" y="154" fill="#fff" text-anchor="middle">后侧相机 ×1</text>
+</svg>
+<p class="figcap">图 2 五路布局示意：顶视 1 路 + 四侧各 1 路，覆盖箱体主要外表面。具体安装位置、视场与触发方式以现场工位勘测为准，本图为设计目标布局，不是已安装状态。</p>
+</figure>
+<ul>
+<li><b>同步采集：</b>五路在同一触发下成像，与箱体条码、型号/模具、工艺参数时间戳对齐后写入单箱记录；任一路故障或遮挡，该箱标记“检测不完整”，不给合格结论。</li>
+<li><b>节拍约束：</b>采集 + 推理 + 分级回写的设计时限为单箱 <b>3 秒</b>内完成，在边缘侧运行，不依赖平台与网络；超时自动转人工复核队列，不阻塞产线节拍。</li>
+<li><b>成像前提：</b>热成像反映的是表面温度场，气泡以局部温度异常形态呈现；检测窗口、脱模后静置时间与环境温度补偿须按现场标定确定，未标定前只出图像与异常提示、不出分级结论。</li>
+</ul>
+<h3>4.2 气泡识别模型：检测、量化、分级三段式</h3>
+<table><tr><th style="width:20%">阶段</th><th style="width:40%">做什么</th><th>输出</th></tr>
+<tr><td>定位检测</td><td>对五路热图做温度校正、区域裁剪与异常定位，给出气泡位置与轮廓</td><td>气泡框/轮廓图、位置分布图（与原图索引绑定）</td></tr>
+<tr><td>特征量化</td><td>计算气泡数量、面积占比、最大气泡尺寸、分布密度与温差对比度</td><td>结构化量化特征（供数据模型与机理对照使用）</td></tr>
+<tr><td>等级分类</td><td>按分级标定表将量化特征映射为 A/B/C/D 等级，并给出置信度</td><td>等级 + 置信度；低置信度强制转“待复核”</td></tr></table>
+<p class="small">模型路线：边缘侧轻量化视觉模型（检测 + 分级双头）为设计方向，具体网络结构与版本号不在本方案锁定，以标注数据规模与边缘算力评估为准。当前状态：气泡识别模型尚未完成训练与验证（见第十章验证口径），现阶段不得表述为已具备自动分级能力。</p>
+<div class="foot"><span>三模型融合架构方案</span><span>第 5 页</span></div>
+</div>
+<div class="page">
+<h2>四（续）、分级、复核与三方供数：检测结果如何被用起来</h2>
+<h3>4.3 A/B/C/D 分级与人工复核（AI 初筛 + 人工复核）</h3>
+<table><tr><th style="width:12%">等级</th><th style="width:38%">含义（定性）</th><th>处置</th></tr>
+<tr><td><b>A</b></td><td>无明显气泡异常</td><td>自动通过，记录归档</td></tr>
+<tr><td><b>B</b></td><td>轻微异常，在可接受范围内</td><td>自动通过并标记观察，纳入趋势统计</td></tr>
+<tr><td><b>C</b></td><td>中等异常，是否可接受需人工判断</td><td>转人工复核：复核员对照原图与叠加轮廓决定放行或拦截</td></tr>
+<tr><td><b>D</b></td><td>严重异常（大面积或关键部位）</td><td>拦截并转人工复核确认处置；模型不单独作出报废决定</td></tr></table>
+<div class="callout"><b>分级纪律：</b>上表为定性分级框架，各级的量化阈值（面积占比、最大尺寸等）须由工艺与质量共同标定并版本化后才生效；未标定或标定过期的型号只出“待复核”。复核员可推翻模型等级，推翻记录连同理由一并留存——这些推翻样本正是最有价值的训练标注。</div>
+<h3>4.4 检测结果的三方供数关系</h3>
+<table><tr><th style="width:22%">供向</th><th>提供什么</th><th>解决什么问题</th></tr>
+<tr><td>喂数据模型</td><td>分级结论 + 量化特征，作为缺陷标签与训练特征回流</td><td>缓解参数优化模型“缺标签”的冷启动难题（见第十一章风险）</td></tr>
+<tr><td>供机理对照</td><td>实测表面温度场与气泡分布，与机理预测的充填/固化结果逐箱对照</td><td>偏差大的箱体触发机理标定复核，偏差模式反过来提示工艺根因</td></tr>
+<tr><td>供语言模型</td><td>结构化检测摘要 + 图像索引，作为根因分析的事实素材</td><td>语言模型可引用检测事实写根因叙事，但不得改判等级、不自行解读原图下结论</td></tr></table>
+<h3>4.5 感知层自身的失效与对策</h3>
+<table><tr><th>失效模式</th><th>对策</th></tr>
+<tr><td>表面温度场受环境/节拍波动干扰，异常形态漂移</td><td>环境补偿 + 检测窗口标定；漂移监控超限时降级为“仅提示、待复核”</td></tr>
+<tr><td>D 级漏检（严重异常被判轻）</td><td>验证阶段将 D 级漏检设为一票否决项；上线后 C/D 边界样本强制抽检复核</td></tr>
+<tr><td>新车型/新模具无标注、无标定</td><td>默认全量转人工复核，边运行边积累标注，达标后再启用自动分级</td></tr></table>
+<div class="foot"><span>三模型融合架构方案</span><span>第 6 页</span></div>
+</div>
+
+<!-- P5 DATA MODEL -->
+<div class="page">
+<h2>五、数据模型：从历史中学习“调多少、收益多大”</h2>
+<h3>5.1 职责与输入输出</h3>
+<table><tr><th style="width:20%">项</th><th>内容</th></tr>
+<tr><td>输入</td><td>单箱工艺参数（发泡比、料温、模温、固化时间等）、气泡识别模型的分级结论与量化特征（主要标签来源）、原料/环境上下文、型号与模具标识。</td></tr>
+<tr><td>输出</td><td>缺陷风险概率、候选参数组合及目标分、关键特征贡献（解释）、是否超出训练分布的标记。</td></tr>
+<tr><td>不负责</td><td>不判断物理可行性（机理模型负责）；不直接生成下发单（融合引擎负责）。</td></tr></table>
+<h3>5.2 模型路线</h3>
+<ul>
+<li><b>基线阶段（当前）：</b>规则模型占位运行，参数窗口与安全基线由工艺给定；系统先把闭环、追溯与验证跑通，数据持续积累。</li>
+<li><b>首个学习模型：</b>梯度提升类模型（LightGBM 槽位已预留）做缺陷风险分类与参数响应回归；特征清单、训练/验证集划分与验收阈值须经工艺与质量共同确认后才启用。</li>
+<li><b>进阶阶段：</b>在数据量与标注质量达标后，评估时序模型用于温度曲线异常检测，以及多目标优化（质量、节拍、能耗/料耗）求候选前沿；是否引入以验证结果为准，不预设。</li>
+</ul>
+<h3>5.3 启用门槛（四项缺一不可）</h3>
+<div class="callout">模型文件 + 特征清单 + 冻结数据集验证报告 + 漂移监控方案。四项齐备、验证达标，适配器状态才由“已注册未启用”切换为“活动模型”；此前优化路径继续走规则适配器，界面与接口保持不变。</div>
+<h3>5.4 数据模型的典型失效与对策</h3>
+<table><tr><th>失效模式</th><th>表现</th><th>对策</th></tr>
+<tr><td>分布外外推</td><td>新材料/新车型上给出高置信错误建议</td><td>分布外检测触发降级；机理可行域先行过滤</td></tr>
+<tr><td>数据漂移</td><td>季节、原料批次变化后精度下降</td><td>漂移监控 + 定期再验证；超限自动回退规则基线</td></tr>
+<tr><td>伪相关</td><td>学到与缺陷无因果的伴随特征</td><td>特征须过工艺审查；机理一致性作为上线门槛之一</td></tr></table>
+<div class="foot"><span>三模型融合架构方案</span><span>第 7 页</span></div>
+</div>
+
+<!-- P6 MECHANISM -->
+<div class="page">
+<h2>六、机理模型：机理孪生是共同决策者，不是兜底项</h2>
+<p class="lead">机理模型把发泡过程的物理与化学规律变成可计算的约束与解释：给定的参数组合在物理上是否成立、预计的密度分布与固化进程是否合理、偏离时先动哪个参数最符合机理——这些问题不靠统计相关性回答。</p>
+<h3>6.1 机理孪生的构成</h3>
+<ul>
+<li><b>反应与充填机理：</b>发泡反应进程、充填与压力演化、固化时间与温度的关系，给出参数可行域与耦合约束（例如某两个参数不能同时取极值）。</li>
+<li><b>热机理：</b>料温、模温与热成像表面温度场的对应关系，支撑气泡检测结果的物理解读；逐箱将实测气泡分布与机理预测对照，偏差模式用于标定复核与根因提示，而非仅做图像分类。</li>
+<li><b>标定与版本：</b>机理参数按型号/模具标定并版本化；标定过期或未覆盖的型号，机理侧只给硬约束、不给优化签字。</li>
+</ul>
+<h3>6.2 在融合中的三项权力</h3>
+<table><tr><th style="width:24%">权力</th><th>说明</th></tr>
+<tr><td>否决权</td><td>候选参数落在可行域之外或违反硬约束时，直接否决，不进入人工确认环节，并在记录中写明被否决的约束项。</td></tr>
+<tr><td>修正权</td><td>候选方向正确但幅度越界时，按机理将幅度收敛到可行域边界，并标注修正量，供工程师判断。</td></tr>
+<tr><td>解释权</td><td>每条通过的建议附带机理说明：预计的充填/固化变化、风险点与观察指标；下发后用实测与机理预测对照做效果验证。</td></tr></table>
+<div class="callout"><b>与数据模型的关系：</b>数据模型在机理可行域<i>之内</i>寻优，机理模型不代替数据模型做精细寻优；两者结论冲突且无法收敛时，系统不自动裁决，转人工并保留双方依据——这是共决策的应有之义。</div>
+<div class="foot"><span>三模型融合架构方案</span><span>第 8 页</span></div>
+</div>
+<!-- P7 LLM -->
+<div class="page">
+<h2>七、大语言模型：理解现场、组织知识、编排任务</h2>
+<p class="lead">大语言模型在本架构中是“认知与协同层”，不是“计算层”，更不是“控制层”。它的价值在于把散落在 SOP、维修记录、老师傅经验与多系统数据里的信息，变成工程师可用的判断材料与可执行的工作流。</p>
+<h3>7.1 四类确定性职责</h3>
+<table><tr><th style="width:24%">职责</th><th>做什么</th><th>边界</th></tr>
+<tr><td>知识问答与检索</td><td>基于私域知识库（工艺规程、历史案例、设备手册）回答问题并给出出处</td><td>只答有据可查的内容；无出处时明示“知识库未覆盖”</td></tr>
+<tr><td>根因分析叙事</td><td>汇总单箱数据、气泡检测摘要、数据模型贡献度与机理解释，生成结构化根因报告草案</td><td>结论须经工程师确认；数值结论引用模型输出，不自行计算</td></tr>
+<tr><td>方案与报表生成</td><td>把已确认的建议、验证结果整理为班报、复盘与汇报材料</td><td>只转述已验证数据；未验证指标保持“未验证”原样呈现</td></tr>
+<tr><td>任务编排</td><td>按流程调用检测、追溯、数据/机理模型等工具，组织多步骤分析（如 LangGraph 式状态流：采集-分析-建议-审批-执行/停止）</td><td>编排止步于人工审批节点；审批前不得触达执行工具</td></tr></table>
+<h3>7.2 选型与部署原则（不绑定单一厂商）</h3>
+<ul>
+<li><b>能力分层选用：</b>通用能力优先选用当前主流大模型（如通义千问系列等可私域部署的模型），经信智平台统一接入与计量；具体型号以集团平台目录与私域部署评估为准，本方案不锁定版本号。</li>
+<li><b>私域优先：</b>涉及生产数据的调用走私域部署或经批准的专有通道；提示词与检索内容按数据分级脱敏。</li>
+<li><b>结构化输出：</b>凡进入决策链的语言模型输出，必须是带字段约束的结构化提案（如建议方向、引用证据、置信说明），自由文本只用于给人看的叙事部分。</li>
+<li><b>可评测：</b>上线前用工艺问答与根因案例集做离线评测；幻觉类错误（编造参数、编造案例）为一票否决项。</li>
+</ul>
+<div class="warn"><b>再次明确：</b>语言模型的任何输出都不能绕过融合引擎与人工确认进入执行通道。它可以“提议把参数往某方向调”，但调多少由数据与机理模型定，能不能调由融合引擎与工程师定。</div>
+<div class="foot"><span>三模型融合架构方案</span><span>第 9 页</span></div>
+</div>
+<!-- P8 FUSION ENGINE -->
+<div class="page">
+<h2>八、融合决策引擎：提案 — 校验 — 仲裁 — 解释</h2>
+<figure>
+<svg viewBox="0 0 720 150" xmlns="http://www.w3.org/2000/svg" font-family="Noto Sans CJK SC,sans-serif" font-size="13.5">
+<rect x="5" y="45" width="130" height="60" fill="#0b3d2e"/><text x="70" y="72" fill="#fff" text-anchor="middle" font-weight="bold">1 提案</text><text x="70" y="90" fill="#cfe8da" text-anchor="middle" font-size="12">数据模型出候选</text>
+<text x="142" y="80" font-size="16">→</text>
+<rect x="165" y="45" width="130" height="60" fill="#1a6b4a"/><text x="230" y="72" fill="#fff" text-anchor="middle" font-weight="bold">2 校验</text><text x="230" y="90" fill="#d8f2e4" text-anchor="middle" font-size="12">机理可行域过滤</text>
+<text x="302" y="80" font-size="16">→</text>
+<rect x="325" y="45" width="130" height="60" fill="#7d94ad"/><text x="390" y="72" fill="#fff" text-anchor="middle" font-weight="bold">3 仲裁</text><text x="390" y="90" fill="#eaf1f8" text-anchor="middle" font-size="12">冲突规则+置信门控</text>
+<text x="462" y="80" font-size="16">→</text>
+<rect x="485" y="45" width="130" height="60" fill="#d97a2b"/><text x="550" y="72" fill="#fff" text-anchor="middle" font-weight="bold">4 解释</text><text x="550" y="90" fill="#fdeede" text-anchor="middle" font-size="12">语言模型成文</text>
+<text x="622" y="80" font-size="16">→</text>
+<rect x="640" y="45" width="75" height="60" fill="#fff" stroke="#0b3d2e" stroke-width="2"/><text x="677" y="72" text-anchor="middle" font-weight="bold" font-size="12.5">人工</text><text x="677" y="90" text-anchor="middle" font-size="12">确认</text>
+</svg>
+<p class="figcap">图 3 融合决策四步。语言模型的“解释”在仲裁之后、人工确认之前：它解释的是已被双模型签字的结论，而不是为未经校验的建议背书。</p>
+</figure>
+<h3>8.1 仲裁规则（写死在引擎中，不由语言模型临场决定）</h3>
+<table><tr><th style="width:30%">情形</th><th>引擎动作</th></tr>
+<tr><td>数据建议在机理可行域内、置信度达标</td><td>通过，附双侧依据，进入解释与人工确认</td></tr>
+<tr><td>数据建议越出可行域</td><td>机理修正至边界或否决；修正量与否决原因入审计</td></tr>
+<tr><td>数据置信度低 / 分布外</td><td>降级为提示模式：只展示分析，不生成可下发建议</td></tr>
+<tr><td>双模型结论方向冲突</td><td>不自动裁决，转人工裁决台，保留双方完整依据</td></tr>
+<tr><td>机理标定缺失或过期</td><td>仅保留硬约束校验，优化建议暂停，提示先完成标定</td></tr></table>
+<h3>8.2 目标函数与评分的归属</h3>
+<p>引擎的输入还包括感知层的当箱气泡分级与量化特征：D 级或连续 B/C 级异常会提高该时段建议的审慎等级（更小步长、更严确认），但分级本身不直接生成参数建议。候选排序使用统一目标分（质量风险、节拍、料耗/能耗的加权组合，权重由工艺与质量共同确认并版本化）。目标分由引擎按确定性公式计算，数据模型提供其中的预测量，语言模型不参与打分——保证同一输入必得同一排序，结果可复现、可审计。</p>
+<div class="foot"><span>三模型融合架构方案</span><span>第 10 页</span></div>
+</div>
+<!-- P9 CLOSED LOOP -->
+<div class="page">
+<h2>九、单箱闭环与安全执行：每一箱都走完八步</h2>
+<table><tr><th style="width:8%">步</th><th style="width:24%">环节</th><th>动作与留痕</th></tr>
+<tr><td>1</td><td>采集</td><td>经 S7 网关读取工艺参数（接口 DB 复制 + 符号访问），与箱体条码绑定；采集失败单独标记，不阻塞追溯主线。</td></tr>
+<tr><td>2</td><td>检测</td><td>5 路热成像同步成像，气泡识别模型在边缘侧完成定位、量化与分级（3 秒设计时限）；C/D 级与低置信度转人工复核，结果与原图索引回写单箱记录。</td></tr>
+<tr><td>3</td><td>分析</td><td>数据模型评估风险，机理模型校验工况，语言模型按需汇总根因材料。</td></tr>
+<tr><td>4</td><td>决策</td><td>融合引擎四步仲裁，生成带目标分与双侧依据的建议单。</td></tr>
+<tr><td>5</td><td>确认</td><td>授权工程师确认、修改或驳回；无确认不下发，超时自动失效。</td></tr>
+<tr><td>6</td><td>下发</td><td>仅白名单参数、窗口与步长内经网关写入；联锁条件实时复核。</td></tr>
+<tr><td>7</td><td>回读</td><td>写入后回读比对，不一致即回滚至安全基线并报警。</td></tr>
+<tr><td>8</td><td>验证</td><td>后续箱体实测与预测对照，形成下发效果验证记录，进入模型再验证数据集。</td></tr></table>
+<h3>部署形态</h3>
+<div class="grid2">
+<div class="card"><b class="t">边缘侧（产线旁）</b><p>气泡识别推理、条码绑定、S7 网关、规则基线与硬约束校验、断网缓存。设计目标：平台或网络中断时，检测与记录不中断，自动调参自动暂停。</p></div>
+<div class="card"><b class="t">平台侧（工厂/集团平台）</b><p>模型训练与验证、机理标定管理、知识库与语言模型服务、融合策略配置、报表与大屏。所有下发边缘的模型与策略均带版本号与验证报告编号。</p></div>
+</div>
+<p class="small">S7 采集兼容性说明：现有网关基于第三方 s7commplus 路线封装，仅支持 S7-1200/1500，能否用于现场取决于具体 CPU 型号与固件版本，须先在实验室按只读清单验证（只读阶段不涉及写操作审批），通过后再谈试写；实验室通过不等于可直接上产线。</p>
+<div class="foot"><span>三模型融合架构方案</span><span>第 11 页</span></div>
+</div>
+
+<!-- P10 VALIDATION -->
+<div class="page">
+<h2>十、验证框架与双轨指标：没验证的，就写“未验证”</h2>
+<h3>10.1 三级验证</h3>
+<table><tr><th style="width:22%">级别</th><th style="width:36%">方式</th><th>通过标准</th></tr>
+<tr><td>离线验证</td><td>冻结数据集回放，数据/机理/融合三方分别出报告</td><td>指标达到预先登记的阈值，报告含数据集版本与划分方式</td></tr>
+<tr><td>影子验证</td><td>线上只算不用：建议生成但不下发，与人工实际决策对照</td><td>连续运行达约定时长，一致率与否决合理率达标</td></tr>
+<tr><td>小批量验证</td><td>限定型号/时段真实下发，逐箱做效果验证</td><td>质量指标不劣化且目标项改善，方可扩大范围</td></tr></table>
+<h3>10.2 双轨 KPI</h3>
+<div class="grid2">
+<div class="card"><b class="t">协议验收轨</b><p>技术协议约定的功能与指标，是交付底线：闭环完整性、追溯可查率、建议采纳与回读成功、下发效果验证记录齐全等。按协议口径计量，不拔高、不缩水。</p></div>
+<div class="card"><b class="t">灯塔优化轨</b><p>对标灯塔工厂的持续优化目标：缺陷风险预测质量、参数寻优收益、根因定位时长、经验沉淀复用次数等。作为改进方向单列展示，与验收轨分开计数。</p></div>
+</div>
+<div class="warn"><b>计量纪律：</b>任一指标在完成对应级别验证之前，一律呈现为“未验证”（空值），严禁用演示数据、模拟结果或估算值填充。模拟环境跑通只证明流程成立，不证明模型有效——方案、看板与汇报材料均执行同一口径。</div>
+<h3>10.3 治理</h3>
+<p>气泡识别模型单独成套验证：以冻结热图测试集评估定位与分级一致性，D 级漏检为一票否决项，分级阈值标定表与模型版本绑定发布；未通过前分级只作初筛提示、复核全量人工。模型、机理标定、融合策略与知识库四类资产统一注册、版本化、可回滚；每次版本变更自动触发再验证任务；审计日志覆盖建议、确认、下发、回读与回滚全链条，支持按箱体条码反查任一决策的完整依据。</p>
+<div class="foot"><span>三模型融合架构方案</span><span>第 12 页</span></div>
+</div>
+<!-- P11 ROADMAP -->
+<div class="page">
+<h2>十一、分阶段路线与互联展望</h2>
+<table><tr><th style="width:16%">阶段</th><th style="width:36%">建设内容</th><th>退出条件</th></tr>
+<tr><td>阶段 1<br>闭环可见</td><td>单箱闭环时间线、双轨 KPI 看板、下发效果验证；气泡检测在线运行（AI 初筛 + 人工复核，积累标注）；规则基线运行（当前推进中）</td><td>任一箱体可完整回放八步记录；未验证指标口径全线执行</td></tr>
+<tr><td>阶段 2<br>模型可信</td><td>气泡识别模型首版训练与单独验证、分级标定表发布；数据模型首版训练与三级验证；机理标定覆盖主力型号；融合仲裁全量启用</td><td>离线+影子验证达标；小批量验证质量不劣化</td></tr>
+<tr><td>阶段 3<br>语言模型深化</td><td>私域知识库与根因助手上线；多步骤编排（含人工审批中断）进生产流程</td><td>知识评测达标、幻觉一票否决项为零；工程师采纳率达约定值</td></tr>
+<tr><td>阶段 4<br>复制与互联</td><td>向其他线体/工厂复制模型与标定包；预留多智能体互联接口</td><td>复制包在目标线体完成影子验证；接口通过内部兼容测试</td></tr></table>
+<h3>关于智能体互联：留接口，不抢跑</h3>
+<p>2026 年 11 月乌镇世界互联网大会期间，中国信通院牵头、20 家单位联合发布《智能体发展自律公约》，提出智能体注册与解析、能力描述与发现等互联基础设施方向。对本项目的含义是：在阶段 4 的接口设计中，预留“能力描述、注册发现、意图转换”三类扩展点，使发泡优化、热成像检测等智能体未来可按统一方式互相发现与调用。须说明：该公约为行业自律文件，并非强制标准或已发布的技术规范，目前没有可直接对接的注册表与协议格式；本方案仅预留扩展点，不将其作为现阶段交付承诺。</p>
+<h3>主要风险与应对</h3>
+<table><tr><th style="width:28%">风险</th><th>应对</th></tr>
+<tr><td>标注数据不足，数据模型迟迟达不到启用门槛</td><td>规则基线长期可运行；以气泡检测的复核推翻样本与人工判定持续积累标注，门槛不降、节奏可调</td></tr>
+<tr><td>机理标定工作量被低估</td><td>按型号优先级分批标定；未标定型号只走硬约束，不假装全覆盖</td></tr>
+<tr><td>语言模型输出不稳定影响信任</td><td>结构化输出+出处强制+离线评测；先用于报表与知识场景，再进决策辅助</td></tr>
+<tr><td>现场 CPU/固件与采集路线不兼容</td><td>实验室只读验证先行；不兼容则切换备选采集方案，不改动生产 DB 迁就采集</td></tr></table>
+<div class="foot"><span>三模型融合架构方案</span><span>第 13 页</span></div>
+</div>
+<!-- P12 APPENDIX -->
+<div class="page">
+<h2>附录：分工速查与术语</h2>
+<h3>A. 谁决定什么</h3>
+<table><tr><th style="width:30%">事项</th><th style="width:22%">主责</th><th>说明</th></tr>
+<tr><td>气泡定位、量化与分级初筛</td><td>气泡识别模型（边缘）</td><td>人工复核可推翻；不单独作报废决定</td></tr>
+<tr><td>候选参数与收益预测</td><td>数据模型</td><td>须标注置信度与分布外标记</td></tr>
+<tr><td>可行域、硬约束、物理解释</td><td>机理模型</td><td>拥有否决权与修正权</td></tr>
+<tr><td>知识检索、根因叙事、报表</td><td>大语言模型</td><td>须给出处，不做数值裁决</td></tr>
+<tr><td>冲突仲裁与目标分计算</td><td>融合引擎</td><td>规则写死、结果可复现</td></tr>
+<tr><td>下发批准</td><td>授权工程师</td><td>人工确认是下发的必要条件</td></tr>
+<tr><td>联锁与设备安全</td><td>PLC 原有逻辑</td><td>优先级高于一切智能体指令</td></tr></table>
+<h3>B. 术语</h3>
+<table><tr><th style="width:26%">术语</th><th>在本方案中的含义</th></tr>
+<tr><td>机理孪生</td><td>以物理/化学机理为核心、可在线校验工况的机理模型形态，与数据驱动的数字孪生互补。</td></tr>
+<tr><td>融合决策引擎</td><td>执行提案-校验-仲裁-解释四步协议的确定性组件，是三类模型通往执行通道的唯一出口。</td></tr>
+<tr><td>气泡分级（A/B/C/D）</td><td>气泡识别模型按标定表给出的单箱质量等级：A 无明显异常、B 轻微可接受、C 待人工复核、D 严重异常拦截复核。</td></tr>
+<tr><td>冻结数据集</td><td>版本锁定、划分公开的验证数据集，用于模型上线与变更后再验证，结果可复现。</td></tr>
+<tr><td>影子验证</td><td>模型在线运行但建议不实际下发，与人工决策对照评估的验证方式。</td></tr>
+<tr><td>双轨 KPI</td><td>协议验收轨与灯塔优化轨两套指标分开计量、分开展示的治理方式。</td></tr></table>
+<div class="callout"><b>方案边界声明：</b>本方案描述的是设计目标架构。当前正式系统的实际状态为：规则占位的数据模型 + 机理约束框架 + 模型适配器与验证框架，气泡识别模型尚未训练与验证、5 路相机布局为设计目标，真实训练模型、真实 PLC/相机/MES 接口与生产平台部署尚未完成；文中涉及语言模型深化、多智能体互联的内容属于阶段 3-4 的规划。评审与汇报时请按此边界引用，避免将设计目标表述为已实现能力。</div>
+<p class="small">编制口径：供应商视角，紧贴技术协议（含 5.3 b)(3)、6.3 第 8 项共决策条款），对标灯塔工厂标准；参数基线数值以工艺工程师最终确认值为准。</p>
+<div class="foot"><span>三模型融合架构方案</span><span>第 14 页 · 完</span></div>
+</div>
+</body></html>
